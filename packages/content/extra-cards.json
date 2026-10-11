@@ -1,0 +1,165 @@
+[
+  {
+    "id": "2.4",
+    "kind": "implement",
+    "level": 2,
+    "order": 4,
+    "title": "makeCounter",
+    "tags": ["closure"],
+    "statement": "Сделай makeCounter(). Каждый вызов возвращает новый объект с increment, decrement и reset. Счётчики не делят состояние.",
+    "starter": "function makeCounter() {\n  \n}\n",
+    "tests": [
+      {
+        "name": "свой счётчик",
+        "code": "var a = makeCounter();\nvar b = makeCounter();\n__test.assertEquals(a.increment(), 1, \"a +1\");\n__test.assertEquals(a.increment(), 2, \"a +2\");\n__test.assertEquals(b.increment(), 1, \"b отдельно\");\na.decrement();\n__test.assertEquals(a.reset(), 0, \"reset\");\n__test.assertEquals(b.increment(), 2, \"b не сброшен\");"
+      }
+    ],
+    "solution": "function makeCounter() {\n  var n = 0;\n  return {\n    increment: function () { return ++n; },\n    decrement: function () { return --n; },\n    reset: function () { n = 0; return n; },\n  };\n}\n",
+    "theory": "Каждый вызов makeCounter создаёт своё лексическое окружение и свой n. Методы возвращаемого объекта замыкаются на это окружение, поэтому a и b не видят счётчик друг друга. reset меняет ту же переменную, а не создаёт новую.",
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "2.5",
+    "kind": "implement",
+    "level": 2,
+    "order": 5,
+    "title": "once",
+    "tags": ["closure"],
+    "statement": "once(fn) возвращает функцию, которая вызывает fn только в первый раз и дальше отдаёт тот же результат.",
+    "starter": "function once(fn) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "один вызов",
+        "code": "var n = 0;\nvar f = once(function (x) { n += 1; return x + n; });\n__test.assertEquals(f(1), 2, \"первый\");\n__test.assertEquals(f(9), 2, \"второй отдал память\");\n__test.assertEquals(n, 1, \"тело один раз\");"
+      }
+    ],
+    "solution": "function once(fn) {\n  var called = false;\n  var value;\n  return function () {\n    if (called) return value;\n    called = true;\n    value = fn.apply(this, arguments);\n    return value;\n  };\n}\n",
+    "theory": "Флаг called и value живут в окружении once, не в самой обёртке как глобальные. Первый вызов записывает результат, следующие даже не входят в fn. apply сохраняет this и аргументы первого вызова.",
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "2.6",
+    "kind": "implement",
+    "level": 2,
+    "order": 6,
+    "title": "sum(1)(2)(3)()",
+    "tags": ["closure"],
+    "statement": "sum(1)(2)(3)() возвращает 6. Чисел может быть сколько угодно, пустой вызов заканчивает цепочку. sum() без аргумента — 0.",
+    "starter": "function sum(n) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "цепочка",
+        "code": "__test.assertEquals(sum(), 0, \"пусто\");\n__test.assertEquals(sum(1)(), 1, \"одно\");\n__test.assertEquals(sum(1)(2)(3)(), 6, \"три\");"
+      }
+    ],
+    "solution": "function sum(n) {\n  if (n === undefined) return 0;\n  var total = n;\n  function next(m) {\n    if (m === undefined) return total;\n    total += m;\n    return next;\n  }\n  return next;\n}\n",
+    "theory": "Каждое число возвращает ту же функцию next, замкнутую на total. Пустой вызов — сигнал остановиться и вернуть число, а не ещё одну функцию. Отдельный вызов sum начинает новую сумму: состояние не глобальное.",
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "6.1",
+    "kind": "implement",
+    "level": 6,
+    "order": 1,
+    "title": "debounce",
+    "tags": ["event-loop"],
+    "statement": "debounce(fn, wait) откладывает вызов, пока пауза между вызовами не станет длиннее wait. Срабатывает один раз, с аргументами последнего вызова.",
+    "starter": "function debounce(fn, wait) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "схлопывает серию",
+        "code": "var calls = [];\nvar d = debounce(function (x) { calls.push(x); }, 20);\nd(1); d(2); d(3);\n__test.assertEquals(calls.length, 0, \"сразу тихо\");\nsetTimeout(function () {\n  __test.assertDeepEqual(calls, [3], \"один последний\");\n}, 40);"
+      }
+    ],
+    "solution": "function debounce(fn, wait) {\n  var timer;\n  return function () {\n    var args = arguments;\n    var ctx = this;\n    clearTimeout(timer);\n    timer = setTimeout(function () { fn.apply(ctx, args); }, wait);\n  };\n}\n",
+    "theory": "Таймер лежит в замыкании. Каждый новый вызов сбрасывает предыдущий clearTimeout, поэтому из серии остаётся только последний. fn.apply нужен, чтобы не потерять this и аргументы: колбэк таймера вызывается уже не как метод.",
+    "waitMs": 80,
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "6.2",
+    "kind": "implement",
+    "level": 6,
+    "order": 2,
+    "title": "throttle",
+    "tags": ["event-loop"],
+    "statement": "throttle(fn, wait) вызывает fn сразу, а следующий вызов — не раньше чем через wait. Если вызовы пришли в окне ожидания, последний из них выполняется по окончании окна.",
+    "starter": "function throttle(fn, wait) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "сразу и хвост",
+        "code": "var n = 0;\nvar t = throttle(function () { n += 1; }, 30);\nt();\n__test.assertEquals(n, 1, \"первый сразу\");\nt();\n__test.assertEquals(n, 1, \"в окне тихо\");\nsetTimeout(function () {\n  __test.assertEquals(n, 2, \"хвост\");\n}, 50);"
+      }
+    ],
+    "solution": "function throttle(fn, wait) {\n  var last = 0;\n  var timer;\n  var savedArgs;\n  var savedThis;\n  return function () {\n    var now = Date.now();\n    savedArgs = arguments;\n    savedThis = this;\n    var remain = wait - (now - last);\n    if (remain <= 0) {\n      clearTimeout(timer);\n      timer = null;\n      last = now;\n      fn.apply(savedThis, savedArgs);\n    } else if (!timer) {\n      timer = setTimeout(function () {\n        last = Date.now();\n        timer = null;\n        fn.apply(savedThis, savedArgs);\n      }, remain);\n    }\n  };\n}\n",
+    "theory": "В отличие от debounce, первый вызов не ждёт. last запоминает время, а timer хранит отложенный хвост. Пока окно не кончилось, новые вызовы только обновляют аргументы, не ставя второй таймер. Поэтому из пачки получается два вызова: ведущий и один замыкающий.",
+    "waitMs": 90,
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "6.3",
+    "kind": "implement",
+    "level": 6,
+    "order": 3,
+    "title": "memoize",
+    "tags": ["closure"],
+    "statement": "memoize(fn) кэширует результат по JSON аргументов. Повторный вызов с теми же аргументами не входит в fn.",
+    "starter": "function memoize(fn) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "кэш",
+        "code": "var n = 0;\nvar f = memoize(function (x) { n += 1; return x * 2; });\n__test.assertEquals(f(2), 4, \"первый\");\n__test.assertEquals(f(2), 4, \"из кэша\");\n__test.assertEquals(f(3), 6, \"другой ключ\");\n__test.assertEquals(n, 2, \"два захода в тело\");"
+      }
+    ],
+    "solution": "function memoize(fn) {\n  var cache = new Map();\n  return function () {\n    var key = JSON.stringify([].slice.call(arguments));\n    if (cache.has(key)) return cache.get(key);\n    var value = fn.apply(this, arguments);\n    cache.set(key, value);\n    return value;\n  };\n}\n",
+    "theory": "Map живёт в замыкании обёртки, не в fn. Ключ — строка аргументов, поэтому 2 и \"2\" это разный кэш. Повтор не вызывает fn вообще: возвращается сохранённое значение, даже если оно undefined.",
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "6.4",
+    "kind": "implement",
+    "level": 6,
+    "order": 4,
+    "title": "sleep",
+    "tags": ["promises"],
+    "statement": "sleep(ms) возвращает промис, который выполняется не раньше чем через ms.",
+    "starter": "function sleep(ms) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "ждёт",
+        "code": "var start = Date.now();\nawait sleep(25);\n__test.assertEquals(Date.now() - start >= 20, true, \"пауза\");"
+      }
+    ],
+    "solution": "function sleep(ms) {\n  return new Promise(function (resolve) {\n    setTimeout(resolve, ms);\n  });\n}\n",
+    "theory": "Промис переносит продолжение в микрозадачу после таймера. await в тесте как раз ждёт этот промис. Резолв без значения — обычный приём, когда важна пауза, а не данные.",
+    "waitMs": 80,
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  },
+  {
+    "id": "6.5",
+    "kind": "implement",
+    "level": 6,
+    "order": 5,
+    "title": "promiseAll",
+    "tags": ["promises"],
+    "statement": "promiseAll(list) ждёт все элементы, сохраняет порядок и падает на первой ошибке. Пустой список выполняется сразу пустым массивом.",
+    "starter": "function promiseAll(list) {\n  \n}\n",
+    "tests": [
+      {
+        "name": "порядок и пустой",
+        "code": "var empty = await promiseAll([]);\n__test.assertDeepEqual(empty, [], \"пусто\");\nvar values = await promiseAll([\n  Promise.resolve(1),\n  2,\n  Promise.resolve(3),\n]);\n__test.assertDeepEqual(values, [1, 2, 3], \"порядок\");"
+      }
+    ],
+    "solution": "function promiseAll(list) {\n  var items = [].slice.call(list);\n  return new Promise(function (resolve, reject) {\n    var out = new Array(items.length);\n    var left = items.length;\n    if (left === 0) { resolve(out); return; }\n    items.forEach(function (item, index) {\n      Promise.resolve(item).then(function (value) {\n        out[index] = value;\n        left -= 1;\n        if (left === 0) resolve(out);\n      }, reject);\n    });\n  });\n}\n",
+    "theory": "Индекс пишется в заранее созданный массив, поэтому более поздний промис не обгоняет более ранний в результате. Promise.resolve оборачивает обычное значение. reject на первой ошибке отклоняет внешний промис; остальные потом ещё выполнятся, но их результат уже никому не нужен.",
+    "updatedAt": "2026-10-11T09:00:00.000Z",
+    "rev": 1
+  }
+]
