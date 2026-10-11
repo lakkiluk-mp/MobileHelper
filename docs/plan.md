@@ -34,7 +34,7 @@
 | 2. Плейграунд | Тот же контракт ленты в изолированной странице. 1.1–1.21 и 5.1–5.5 совпадают с golden | Готово: iframe, не нативный WebView |
 | 3. Офлайн-прогресс | Оценка → устройство → сеть → строка на сервере по `deviceId`. Плашка, если сети нет | Готово |
 | 4. Вход | Привязка анонимного устройства к пользователю | Готово как вход Google/X через платформу. Нативный APK и общий keystore здесь не собираются |
-| 5. Implement | Общий раннер, события `type: "test"`. Образцы `once` и `debounce`, остальные задачи — JSON | Готово: 2.4–2.6 и 6.1–6.5 |
+| 5. Implement | Общий раннер, события `type: "test"`. Образцы `once` и `debounce`, остальные задачи — JSON | Готово: 2.4–2.6 и 6.1–6.24, включая curry, compose/pipe, map/filter/reduce, call/apply/bind, allSettled/race, flat, get, groupBy, deepClone, deepEqual, EventEmitter, retry, pool |
 
 TypeScript, живой React и LeetCode в эти фазы не входят.
 

@@ -1,12 +1,17 @@
 import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
 function Login() {
   const { user, isPending } = useCurrentUserState();
-  if (isPending) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(true);
+  }, []);
+  if (!ready || isPending) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm items-center px-5">
         <div className="h-11 w-full animate-pulse rounded-full bg-line" />
