@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AccountSlot } from "@/components/account-slot";
 import { PathView } from "@/components/path-view";
 import { SyncNote } from "@/lib/study";
@@ -15,6 +15,9 @@ function Home() {
           <p className="mt-3 text-base text-pretty text-muted">
             Тропа идёт по порядку. Оцени шаг — откроется следующий. Без сети задачи остаются на устройстве.
           </p>
+          <Link to="/settings" className="mt-1 inline-flex min-h-11 items-center text-sm text-mark no-underline">
+            Настройки
+          </Link>
         </div>
         <AccountSlot />
       </header>

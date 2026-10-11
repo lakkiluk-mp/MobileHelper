@@ -1,8 +1,10 @@
 import { runInBrowser } from "@/lib/browser-runner";
+import { snippetAfterInput, snippetsEnabled, type SnippetEdit } from "@/lib/snippets";
 import { useStudy } from "@/lib/study";
 import { compareTapes, type TapeEvent } from "@etalon/runner";
 import type { Card, PredictCard, ProgressStatus } from "@etalon/shared";
-import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const RATINGS: Array<{ id: ProgressStatus; label: string }> = [
   { id: "missed", label: "Не знал" },
@@ -200,15 +202,48 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
   const [tape, setTape] = useState<TapeEvent[] | null>(null);
   const [running, setRunning] = useState(false);
   const [open, setOpen] = useState(false);
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  const prevRef = useRef(card.starter);
+  const caretRef = useRef<number | null>(null);
+  const expanding = useRef(false);
 
   useEffect(() => {
     const saved = draft(card.id);
-    setCode(saved || card.starter);
+    const next = saved || card.starter;
+    prevRef.current = next;
+    caretRef.current = null;
+    setCode(next);
     // Load the saved draft only when the card changes. `draft` identity follows progress updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id, card.starter]);
 
+  useLayoutEffect(() => {
+    const el = areaRef.current;
+    const pos = caretRef.current;
+    if (!el || pos == null) return;
+    el.selectionStart = el.selectionEnd = pos;
+    caretRef.current = null;
+  }, [code]);
+
   const tests = tape?.filter((event) => event.type === "test") ?? [];
+
+  function commit(value: string) {
+    prevRef.current = value;
+    setCode(value);
+    saveDraft(card.id, value);
+  }
+
+  function applyEdit(el: HTMLTextAreaElement, value: string, edit: SnippetEdit) {
+    expanding.current = true;
+    caretRef.current = edit.caret;
+    el.setSelectionRange(edit.from, edit.to);
+    // Replacing the selection keeps the browser undo stack, so one undo restores the word.
+    const ok = document.execCommand("insertText", false, edit.text);
+    if (ok && !expanding.current) return;
+    expanding.current = false;
+    const next = ok ? el.value : value.slice(0, edit.from) + edit.text + value.slice(edit.to);
+    commit(next);
+  }
 
   return (
     <div className="mt-6">
@@ -217,16 +252,47 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
       <pre className="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-4 font-mono text-sm leading-relaxed">
         <code>{card.tests.map((test) => test.code).join("\n\n")}</code>
       </pre>
-      <label className="mt-4 block text-sm text-muted" htmlFor="solution">
-        Твоё решение
-      </label>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <label className="text-sm text-muted" htmlFor="solution">
+          Твоё решение
+        </label>
+        <Link to="/settings" className="inline-flex min-h-11 items-center text-sm text-muted no-underline">
+          Настройки
+        </Link>
+      </div>
       <textarea
+        ref={areaRef}
         id="solution"
         value={code}
         spellCheck={false}
+        autoCapitalize="none"
+        autoCorrect="off"
+        autoComplete="off"
         onChange={(event) => {
-          setCode(event.target.value);
-          saveDraft(card.id, event.target.value);
+          const el = event.currentTarget;
+          const value = el.value;
+          const caret = el.selectionStart ?? value.length;
+          if (expanding.current) {
+            expanding.current = false;
+            commit(value);
+            return;
+          }
+          const native = event.nativeEvent;
+          const inputType = native instanceof InputEvent ? native.inputType : "";
+          const composing = native instanceof InputEvent && native.isComposing;
+          const undo = inputType === "historyUndo" || inputType === "historyRedo";
+          const deletion = inputType.startsWith("delete");
+          const insertion = inputType.startsWith("insert") || (!inputType && value.length > prevRef.current.length);
+          if (!insertion || undo || deletion || composing || !snippetsEnabled()) {
+            commit(value);
+            return;
+          }
+          const edit = snippetAfterInput(value, caret);
+          if (!edit) {
+            commit(value);
+            return;
+          }
+          applyEdit(el, value, edit);
         }}
         className="mt-2 min-h-48 w-full rounded-lg border border-line bg-card p-4 font-mono text-sm leading-relaxed text-ink"
       />
