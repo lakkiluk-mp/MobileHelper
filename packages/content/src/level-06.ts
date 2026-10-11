@@ -64,13 +64,13 @@ export const CARDS = [
     tests: [
       {
         name: "кэш",
-        code: "var n = 0;\nvar f = memoize(function (x) { n += 1; return x * 2; });\n__test.assertEquals(f(2), 4, \"первый\");\n__test.assertEquals(f(2), 4, \"из кэша\");\n__test.assertEquals(f(3), 6, \"другой ключ\");\n__test.assertEquals(n, 2, \"два захода в тело\");"
+        code: "var n = 0;\nvar f = memoize(function (x) { n += 1; return x * 2; });\n__test.assertEquals(f(2), 4, \"первый\");\n__test.assertEquals(f(2), 4, \"из кэша\");\n__test.assertEquals(f(3), 6, \"другой ключ\");\n__test.assertEquals(n, 2, \"два захода в тело\");\nvar calls = 0;\nvar g = memoize(function (x) { calls += 1; return String(x); });\n__test.assertEquals(g(2), \"2\", \"число\");\n__test.assertEquals(g(\"2\"), \"2\", \"строка\");\n__test.assertEquals(calls, 2, \"2 и строка 2 — разный кэш\");"
       }
     ],
     solution: "function memoize(fn) {\n  var cache = new Map();\n  return function () {\n    var key = JSON.stringify([].slice.call(arguments));\n    if (cache.has(key)) return cache.get(key);\n    var value = fn.apply(this, arguments);\n    cache.set(key, value);\n    return value;\n  };\n}\n",
     theory: "Map живёт в замыкании обёртки, не в fn. Ключ — строка аргументов, поэтому 2 и \"2\" это разный кэш. Повтор не вызывает fn вообще: возвращается сохранённое значение, даже если оно undefined.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-11T14:10:00.000Z",
+    rev: 2
   },
   {
     id: "6.4",
@@ -109,13 +109,13 @@ export const CARDS = [
     tests: [
       {
         name: "порядок и пустой",
-        code: "var empty = await promiseAll([]);\n__test.assertDeepEqual(empty, [], \"пусто\");\nvar values = await promiseAll([\n  Promise.resolve(1),\n  2,\n  Promise.resolve(3),\n]);\n__test.assertDeepEqual(values, [1, 2, 3], \"порядок\");"
+        code: "var empty = await promiseAll([]);\n__test.assertDeepEqual(empty, [], \"пусто\");\nvar values = await promiseAll([\n  Promise.resolve(1),\n  2,\n  Promise.resolve(3),\n]);\n__test.assertDeepEqual(values, [1, 2, 3], \"порядок\");\nvar rejected = false;\nvar reason = \"\";\ntry {\n  await promiseAll([Promise.resolve(1), Promise.reject(new Error(\"boom\"))]);\n} catch (error) {\n  rejected = true;\n  reason = error.message;\n}\n__test.assertEquals(rejected, true, \"reject\");\n__test.assertEquals(reason, \"boom\", \"текст ошибки\");\nvar first = \"\";\ntry {\n  await promiseAll([Promise.reject(new Error(\"a\")), Promise.reject(new Error(\"b\"))]);\n} catch (error) {\n  first = error.message;\n}\n__test.assertEquals(first, \"a\", \"первая ошибка\");"
       }
     ],
     solution: "function promiseAll(list) {\n  var items = [].slice.call(list);\n  return new Promise(function (resolve, reject) {\n    var out = new Array(items.length);\n    var left = items.length;\n    if (left === 0) { resolve(out); return; }\n    items.forEach(function (item, index) {\n      Promise.resolve(item).then(function (value) {\n        out[index] = value;\n        left -= 1;\n        if (left === 0) resolve(out);\n      }, reject);\n    });\n  });\n}\n",
     theory: "Индекс пишется в заранее созданный массив, поэтому более поздний промис не обгоняет более ранний в результате. Promise.resolve оборачивает обычное значение. reject на первой ошибке отклоняет внешний промис; остальные потом ещё выполнятся, но их результат уже никому не нужен.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-11T14:10:00.000Z",
+    rev: 2
   },
   {
     id: "6.6",
@@ -126,7 +126,7 @@ export const CARDS = [
     tags: [
       "closure"
     ],
-    statement: "curry(fn) копирует аргументы, пока их не станет столько, сколько у fn.length. Звать можно по одному или пачкой. Когда аргументов хватает, вызывается исходная fn.",
+    statement: "curry(fn) копит аргументы, пока их не станет столько, сколько у fn.length. Звать можно по одному или пачкой. Когда аргументов хватает, вызывается исходная fn.",
     starter: "function curry(fn) {\n  \n}\n",
     tests: [
       {
@@ -136,8 +136,8 @@ export const CARDS = [
     ],
     solution: "function curry(fn) {\n  return function curried() {\n    var args = [].slice.call(arguments);\n    if (args.length >= fn.length) return fn.apply(this, args);\n    return function () {\n      return curried.apply(this, args.concat([].slice.call(arguments)));\n    };\n  };\n}\n",
     theory: "Длина функции — это fn.length, число объявленных параметров. Пока собранных аргументов меньше, curry возвращает новую функцию, замкнутую на уже накопленный список. Когда аргументов хватает, apply зовёт исходную fn и цепочка заканчивается числом, а не ещё одной функцией.",
-    updatedAt: "2026-10-11T10:50:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-11T14:10:00.000Z",
+    rev: 2
   },
   {
     id: "6.7",
@@ -219,13 +219,13 @@ export const CARDS = [
     tests: [
       {
         name: "отбор",
-        code: "var src = [1, 2, 3, 4];\nvar out = filter(src, function (n) { return n % 2 === 0; });\n__test.assertDeepEqual(out, [2, 4], \"чётные\");\n__test.assertDeepEqual(src, [1, 2, 3, 4], \"исходный цел\");"
+        code: "var src = [1, 2, 3, 4];\nvar out = filter(src, function (n) { return n % 2 === 0; });\n__test.assertDeepEqual(out, [2, 4], \"чётные\");\n__test.assertDeepEqual(src, [1, 2, 3, 4], \"исходный цел\");\n__test.assertDeepEqual(filter([10, 20, 30], function (n, i) { return i > 0; }), [20, 30], \"индекс\");"
       }
     ],
     solution: "function filter(list, fn) {\n  var out = [];\n  for (var i = 0; i < list.length; i++) {\n    if (fn(list[i], i)) out.push(list[i]);\n  }\n  return out;\n}\n",
     theory: "В результат кладётся сам элемент, а не то, что вернула fn. fn только решает, прошёл ли элемент. 0 и пустая строка в предикате — ложь, поэтому такие элементы выпадут, если предикат возвращает сам элемент вместо true.",
-    updatedAt: "2026-10-11T10:50:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-11T14:10:00.000Z",
+    rev: 2
   },
   {
     id: "6.11",

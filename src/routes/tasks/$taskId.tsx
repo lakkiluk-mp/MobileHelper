@@ -58,7 +58,7 @@ function TaskPage() {
         <h1 className="mt-1 text-3xl text-ink">{card.title}</h1>
         <p className="mt-3 text-sm text-muted">{card.tags.join(" · ")}</p>
       </header>
-      <TaskView card={card} />
+      <TaskView key={card.id} card={card} />
       <SyncNote />
     </main>
   );

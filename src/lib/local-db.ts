@@ -101,11 +101,27 @@ export async function replaceProgress(rows: ProgressRow[]): Promise<void> {
   db.close();
 }
 
+let memoryDeviceId: string | null = null;
+
 export function deviceId(): string {
   const key = "etalon-device";
-  const existing = localStorage.getItem(key);
-  if (existing) return existing;
-  const created = crypto.randomUUID();
-  localStorage.setItem(key, created);
-  return created;
+  if (memoryDeviceId) return memoryDeviceId;
+  try {
+    if (typeof localStorage === "undefined") {
+      memoryDeviceId = crypto.randomUUID();
+      return memoryDeviceId;
+    }
+    const existing = localStorage.getItem(key);
+    if (existing) {
+      memoryDeviceId = existing;
+      return existing;
+    }
+    const created = crypto.randomUUID();
+    localStorage.setItem(key, created);
+    memoryDeviceId = created;
+    return created;
+  } catch {
+    memoryDeviceId = crypto.randomUUID();
+    return memoryDeviceId;
+  }
 }

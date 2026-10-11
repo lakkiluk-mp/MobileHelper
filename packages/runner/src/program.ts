@@ -1,13 +1,14 @@
+import type { TapeEvent } from "./tape.ts";
+
 /**
- * Тестовый харнесс для implement-карточек.
- *
- * Отдаётся как фабрика, а не готовой переменной: так `__serialize` и функция
- * отправки события остаются в замыкании, а наружу торчит только объект `__test`.
- * Вместе с `const __test` внутри IIFE (см. `buildImplementProgram`) это не даёт
- * коду ученика переприсвоить харнесс и отчитаться о «зелёных» проверках.
+ * Harness lives in a closure. Learner code runs after `__report` / `__serialize`
+ * are cleared, and `__test` is frozen so it cannot be swapped for a fake that
+ * marks every check as passed.
  */
-export const TEST_HARNESS = `var __makeTest = function (serialize, report) {
-  return Object.freeze({
+export function buildImplementProgram(userCode: string, tests: Array<{ code: string }>): string {
+  const body = tests.map((test) => test.code).join("\n");
+  return `(function (report, serialize) {
+  var api = Object.freeze({
     assertEquals: function (actual, expected, name) {
       var pass = Object.is(actual, expected);
       report({
@@ -37,54 +38,56 @@ export const TEST_HARNESS = `var __makeTest = function (serialize, report) {
       });
     },
   });
-};`;
-
-/**
- * Собирает программу прогона implement-карточки: харнесс, код ученика, тесты.
- *
- * Почему так, а не «просто склеить строки»:
- *  - харнесс и `__test` лежат внутри IIFE, `__test` объявлен через `const`,
- *    поэтому `__test = {...}` из кода ученика падает с `TypeError`, а
- *    `Object.freeze` не даёт подменить отдельные методы;
- *  - тело ученика обёрнуто в `try`, а тесты — в `async` с `try/catch`: иначе
- *    синхронный `throw` превращается в необработанный reject промиса и роняет
- *    Node вместо того, чтобы стать событием `error` в ленте.
- *
- * Граница честности: это защита от наивной подмены, а не от подделки вывода
- * целиком. Код ученика всё ещё видит глобальный `__report` и может слать свои
- * события; ловится это на стороне проверки — `golden.test.ts` требует, чтобы
- * число и имена выполненных проверок совпали с объявленными в карточке, а
- * браузерный вердикт отвергает ленту с событиями `error`. Инструмент
- * самопроверки, а не экзамен под наблюдением.
- */
-export function buildImplementProgram(userCode: string, tests: Array<{ code: string }>): string {
-  const body = tests.map((test) => test.code).join("\n");
-  return `${TEST_HARNESS}
-;(function () {
-  const __test = __makeTest(__serialize, function (event) {
-    __report(event);
-  });
-  var __safeReport = function (error) {
-    __report({
+  var fail = function (error) {
+    report({
       type: "error",
       name: (error && error.name) || "Error",
       message: String((error && error.message) || error),
     });
   };
-  try {
-${userCode}
-  } catch (error) {
-    __safeReport(error);
-  }
-  (async function () {
+  var globalObject = (function () { return this; })();
+  if (!globalObject) globalObject = (0, eval)("this");
+  var lock = function (key, value) {
     try {
-${body}
+      Object.defineProperty(globalObject, key, { value: value, writable: false, configurable: false });
     } catch (error) {
-      __safeReport(error);
+      globalObject[key] = value;
     }
-  })().catch(function (error) {
-    __safeReport(error);
-  });
-})();
+  };
+  lock("__test", api);
+  lock("__onTestError", fail);
+  try { delete globalObject.__report; } catch (error) {}
+  try { delete globalObject.__serialize; } catch (error) {}
+  try { globalObject.__report = undefined; } catch (error) {}
+  try { globalObject.__serialize = undefined; } catch (error) {}
+})(
+  typeof __report === "function" ? __report : function () {},
+  typeof __serialize === "function" ? __serialize : function (value) { return String(value); }
+);
+${userCode}
+;(async function () {
+${body}
+})().catch(typeof __onTestError === "function" ? __onTestError : function () {});
 `;
+}
+
+export function countAssertions(tests: Array<{ code: string }>): number {
+  return tests.reduce((sum, test) => sum + (test.code.match(/__test\./g) ?? []).length, 0);
+}
+
+/** Passing means every declared check ran, none failed, and nothing threw. */
+export function gradeImplementTape(
+  tape: TapeEvent[],
+  tests: Array<{ code: string }>,
+): { ok: boolean; detail: string } {
+  const expected = countAssertions(tests);
+  const ran = tape.filter((event) => event.type === "test");
+  const error = tape.find((event) => event.type === "error");
+  if (error && error.type === "error") return { ok: false, detail: `${error.name}: ${error.message}` };
+  if (ran.length !== expected) return { ok: false, detail: `проверок ${ran.length} из ${expected}` };
+  const failed = ran.find((event) => event.type === "test" && !event.pass);
+  if (failed && failed.type === "test") {
+    return { ok: false, detail: `${failed.name}${failed.message ? `: ${failed.message}` : ""}` };
+  }
+  return { ok: true, detail: "" };
 }

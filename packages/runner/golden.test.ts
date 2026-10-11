@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { loadCardsFromDisk } from "../content/src/node-load.ts";
-import { buildImplementProgram } from "./src/program.ts";
+import { LEVELS } from "../content/src/levels.ts";
+import { buildImplementProgram, gradeImplementTape } from "./src/program.ts";
 import { compareTapes, formatTape } from "./src/tape.ts";
 import { runInNode } from "./src/node-host.ts";
 
@@ -18,11 +19,6 @@ const LEVEL_SIZES: Record<number, number> = {
   5: 15,
   6: 50,
 };
-
-/** Сколько вызовов `__test.` объявлено в тестах карточки. */
-function declaredAssertions(card: { tests: Array<{ code: string }> }): number {
-  return (card.tests.map((entry) => entry.code).join("\n").match(/__test\./g) ?? []).length;
-}
 
 /**
  * Имена проверок, объявленные в тестах, в порядке выполнения.
@@ -41,7 +37,6 @@ function declaredNames(card: { tests: Array<{ code: string }> }): string[] | nul
   const call = /__test\.\w+\s*\(/g;
   let match: RegExpExecArray | null;
   while ((match = call.exec(source)) !== null) {
-    // собираем аргументы верхнего уровня этого вызова
     let depth = 1;
     let index = match.index + match[0].length;
     const args: string[] = [];
@@ -79,12 +74,18 @@ test("content has the expected shape per level", async () => {
     ids.add(card.id);
     byLevel.set(card.level, (byLevel.get(card.level) ?? 0) + 1);
   }
-  for (const [level, expected] of Object.entries(LEVEL_SIZES)) {
+  for (const level of LEVELS) {
+    const expected = LEVEL_SIZES[level.level];
     assert.equal(
-      byLevel.get(Number(level)) ?? 0,
+      byLevel.get(level.level) ?? 0,
       expected,
-      `level ${level}: ожидалось ${expected} карточек, а не ${byLevel.get(Number(level)) ?? 0}`,
+      `level ${level.level}: ожидалось ${expected} карточек, а не ${byLevel.get(level.level) ?? 0}`,
     );
+    const orders = cards
+      .filter((card) => card.level === level.level)
+      .map((card) => card.order)
+      .sort((a, b) => a - b);
+    assert.deepEqual(orders, orders.map((_, index) => index + 1), `level ${level.level} order gap`);
   }
 });
 
@@ -114,33 +115,11 @@ test("committed tapes match a fresh Node run", async () => {
       continue;
     }
 
-    // Implement-карточка. Проверяем три вещи, каждая из которых раньше
-    // пропускала сломанное решение:
-    //  1) объявлено хоть одно __test. (иначе «тесты» ничего не проверяют);
-    //  2) выполнено ровно столько проверок, сколько объявлено — упавший на
-    //     середине кандидат раньше проходил, потому что считались блоки tests[];
-    //  3) в ленте нет событий error — раньше они вообще не смотрелись.
-    const declared = declaredAssertions(card);
-    assert.ok(declared > 0, `${card.id}: в tests нет ни одного вызова __test.`);
-
     const program = buildImplementProgram(card.solution, card.tests);
     const tape = await runInNode(program, { strict: false, waitMs: card.waitMs ?? 40 });
-    const ran = tape.filter((event) => event.type === "test").length;
-    const threw = tape.filter((event) => event.type === "error");
+    const verdict = gradeImplementTape(tape, card.tests);
+    assert.equal(verdict.ok, true, `${card.id} ${verdict.detail}\n${formatTape(tape)}`);
 
-    assert.equal(
-      threw.length,
-      0,
-      `${card.id}: эталон бросил — ${threw.map((event) => (event.type === "error" ? `${event.name}: ${event.message}` : "")).join("; ")}\n${formatTape(tape)}`,
-    );
-    assert.equal(
-      ran,
-      declared,
-      `${card.id}: выполнено ${ran} проверок из ${declared} объявленных\n${formatTape(tape)}`,
-    );
-
-    // Имена ловят подменённый __test: проверок столько же и все «зелёные»,
-    // но названы они не так, как объявлено в карточке.
     const expectedNames = declaredNames(card);
     if (expectedNames) {
       const actualNames = tape
@@ -152,10 +131,31 @@ test("committed tapes match a fresh Node run", async () => {
         `${card.id}: имена выполненных проверок не совпали с объявленными — похоже на подмену __test\n${formatTape(tape)}`,
       );
     }
-
-    for (const event of tape) {
-      if (event.type !== "test") continue;
-      assert.equal(event.pass, true, `${card.id} ${event.name}: ${event.message ?? ""}`);
-    }
   }
+});
+
+test("a fake harness cannot mark a wrong solution as passed", async () => {
+  const tests = [
+    {
+      name: "поле",
+      code: '__test.assertEquals(groupBy([]), 1, "по полю");\n__test.assertDeepEqual(groupBy([]), { a: 1 }, "функция");',
+    },
+  ];
+  const cheat = `function groupBy() { return {}; }
+__test = {
+  assertEquals: function (a, b, name) { __report({ type: "test", name: name || "equals", pass: true }); },
+  assertDeepEqual: function (a, b, name) { __report({ type: "test", name: name || "deepEqual", pass: true }); },
+  expectThrow: function (fn, name) { __report({ type: "test", name: name || "throws", pass: true }); },
+};
+__report({ type: "test", name: "по полю", pass: true });
+__report({ type: "test", name: "функция", pass: true });`;
+  const tape = await runInNode(buildImplementProgram(cheat, tests), { strict: false, waitMs: 40 });
+  const verdict = gradeImplementTape(tape, tests);
+  assert.equal(verdict.ok, false, formatTape(tape));
+});
+
+test("an error after the first check is not a pass", async () => {
+  const tests = [{ name: "два", code: '__test.assertEquals(1, 1, "первый");\nthrow new Error("вторая ветка");' }];
+  const tape = await runInNode(buildImplementProgram("function ready() { return 1; }", tests), { strict: false, waitMs: 40 });
+  assert.equal(gradeImplementTape(tape, tests).ok, false, formatTape(tape));
 });
