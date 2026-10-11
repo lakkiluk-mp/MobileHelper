@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Эталон",
+    "slug": "etalon",
+    "scheme": "etalon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0d1015",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.etalon.mobile"
+    },
+    "android": {
+      "package": "app.etalon.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0d1015",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "platforms": ["ios", "android"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-font",
+      "expo-status-bar"
+    ]
+  }
+}

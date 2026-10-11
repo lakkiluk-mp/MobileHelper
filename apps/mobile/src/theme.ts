@@ -1,0 +1,30 @@
+export const colors = {
+  paper: "#0d1015",
+  ink: "#e8ecf2",
+  muted: "#98a1b0",
+  faint: "#6b7280",
+  line: "#2a303b",
+  card: "#161a21",
+  raised: "#1e232c",
+  mark: "#c6f24e",
+  markSoft: "rgba(198, 242, 78, 0.12)",
+  warn: "#ffb84d",
+  bad: "#ff8a8a",
+  violet: "#a88bff",
+  codeKeyword: "#ff8fb1",
+  codeString: "#9be39b",
+  codeCall: "#a88bff",
+  codeNumber: "#ffb84d",
+  codeComment: "#6b7280",
+};
+
+export const fonts = {
+  sans: "SpaceGrotesk_400Regular",
+  sansMedium: "SpaceGrotesk_500Medium",
+  sansSemibold: "SpaceGrotesk_600SemiBold",
+  sansBold: "SpaceGrotesk_700Bold",
+  mono: "JetBrainsMono_400Regular",
+  monoMedium: "JetBrainsMono_500Medium",
+  monoBold: "JetBrainsMono_700Bold",
+  monoItalic: "JetBrainsMono_400Regular_Italic",
+};

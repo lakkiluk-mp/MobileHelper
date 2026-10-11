@@ -1,0 +1,43 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@etalon/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@etalon/content": [
+        "./types/content.d.ts"
+      ],
+      "@etalon/runner": [
+        "../../packages/runner/src/index.ts"
+      ],
+      "@etalon/web-path": [
+        "../../src/lib/path.ts"
+      ],
+      "@etalon/web-answer": [
+        "../../src/lib/answer.ts"
+      ],
+      "@etalon/web-stats": [
+        "../../src/lib/stats.ts"
+      ],
+      "@etalon/web-highlight": [
+        "../../src/lib/highlight.ts"
+      ],
+      "@etalon/web-snippets": [
+        "../../src/lib/snippets.ts"
+      ],
+      "@etalon/web-catalog": [
+        "../../src/lib/catalog.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}

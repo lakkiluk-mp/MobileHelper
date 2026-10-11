@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { TaskView } from "@/components/task-view";
-import { pathOf, type PathState } from "@/lib/path";
+import { lockOf, pathOf, type PathState } from "@/lib/path";
 import { SyncNote, useStudy } from "@/lib/study";
 import { ChevronLeft } from "lucide-react";
 
@@ -44,15 +44,17 @@ function TaskPage() {
   const steps = pathOf(cards, progress);
   const step = steps.find((item) => item.card.id === card.id);
   if (step?.state === "locked") {
-    const current = steps.find((item) => item.state === "current");
+    const { next: current, gate } = lockOf(cards, progress, steps, card);
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-8">
         <BackLink />
         <h1 className="mt-4 text-[26px] font-semibold text-ink">Шаг ещё закрыт</h1>
         <p className="mt-3 text-sm text-pretty text-muted">
-          {current
-            ? `Сначала оцени ${current.card.id}. Потом откроется ${card.id}.`
-            : "Этот шаг откроется по порядку тропы."}
+          {gate
+            ? `Тема откроется, когда в теме ${gate.level} ещё ${gate.need} задач будут на «знал».`
+            : current
+              ? `Сначала оцени ${current.card.id}. Потом откроется ${card.id}.`
+              : "Этот шаг откроется по порядку тропы."}
         </p>
         {current ? (
           <Link
