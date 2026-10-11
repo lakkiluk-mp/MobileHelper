@@ -18,8 +18,11 @@ function Settings() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-5 py-8">
-      <Link to="/" className="inline-flex min-h-11 items-center text-sm text-mark no-underline">
-        К тропе
+      <Link
+        to="/profile"
+        className="inline-flex min-h-11 items-center text-sm text-mark no-underline"
+      >
+        ‹ Профиль
       </Link>
       <header className="mt-4">
         <p className="text-xs font-medium tracking-widest text-muted uppercase">Эталон</p>
@@ -53,8 +56,8 @@ function Settings() {
           <div className="mt-5 h-11 w-56 animate-pulse rounded-full bg-line" />
         )}
         <p className="mt-4 text-sm text-pretty text-muted">
-          Если нужно само слово, а не конструкция — выключи здесь. Точка · в примере показывает, куда
-          встанет курсор.
+          Если нужно само слово, а не конструкция — выключи здесь. Точка · в примере показывает,
+          куда встанет курсор.
         </p>
       </section>
       <SnippetGroup title="Сразу" items={immediate} />
@@ -77,7 +80,9 @@ function SnippetGroup({
         {items.map((item) => (
           <li key={item.trigger} className="border-b border-line py-3">
             <code className="font-mono text-sm text-ink">{item.trigger}</code>
-            <code className="mt-1 block font-mono text-xs text-pretty text-muted">{item.preview}</code>
+            <code className="mt-1 block font-mono text-xs text-pretty text-muted">
+              {item.preview}
+            </code>
           </li>
         ))}
       </ul>

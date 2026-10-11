@@ -1,3 +1,5 @@
+import { CodeSnippet } from "@/components/code-block";
+
 type Block =
   | { kind: "heading"; text: string }
   | { kind: "code"; lines: string[] }
@@ -11,7 +13,10 @@ function inline(text: string, keyPrefix: string) {
     const key = `${keyPrefix}-${index}`;
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       return (
-        <code key={key} className="rounded bg-mark-soft px-1 py-0.5 font-mono text-[0.9em] text-ink">
+        <code
+          key={key}
+          className="rounded bg-raised px-1 py-0.5 font-mono text-[0.9em] text-mark [overflow-wrap:anywhere]"
+        >
           {part.slice(1, -1)}
         </code>
       );
@@ -94,27 +99,26 @@ export function TheoryText({ text }: { text: string }) {
         const key = `${block.kind}-${index}`;
         if (block.kind === "heading") {
           return (
-            <h3 key={key} className="pt-2 text-xs font-semibold tracking-widest text-muted uppercase">
+            <h3
+              key={key}
+              className="pt-2 text-xs font-semibold tracking-widest text-muted uppercase"
+            >
               {block.text}
             </h3>
           );
         }
         if (block.kind === "code") {
-          return (
-            <pre
-              key={key}
-              className="overflow-x-auto rounded-lg border border-line bg-card p-3 font-mono text-xs leading-relaxed"
-            >
-              <code>{block.lines.join("\n")}</code>
-            </pre>
-          );
+          return <CodeSnippet key={key} code={block.lines.join("\n")} />;
         }
         if (block.kind === "list") {
           return (
             <ul key={key} className="ml-1 space-y-1.5">
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${itemIndex}`} className="flex gap-2">
-                  <span aria-hidden="true" className="mt-[0.55em] size-1 shrink-0 rounded-full bg-mark" />
+                  <span
+                    aria-hidden="true"
+                    className="mt-[0.55em] size-1 shrink-0 rounded-full bg-mark"
+                  />
                   <span>{inline(item, `${key}-${itemIndex}`)}</span>
                 </li>
               ))}
