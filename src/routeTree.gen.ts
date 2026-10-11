@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LevelsLevelRouteImport } from './routes/levels/$level'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
@@ -24,6 +27,21 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -50,6 +68,9 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
@@ -58,6 +79,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
@@ -67,6 +91,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
@@ -77,6 +104,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/profile'
+    | '/progress'
+    | '/review'
     | '/settings'
     | '/levels/$level'
     | '/tasks/$taskId'
@@ -85,6 +115,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/profile'
+    | '/progress'
+    | '/review'
     | '/settings'
     | '/levels/$level'
     | '/tasks/$taskId'
@@ -93,6 +126,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/profile'
+    | '/progress'
+    | '/review'
     | '/settings'
     | '/levels/$level'
     | '/tasks/$taskId'
@@ -102,6 +138,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
+  ProgressRoute: typeof ProgressRoute
+  ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
   LevelsLevelRoute: typeof LevelsLevelRoute
   TasksTaskIdRoute: typeof TasksTaskIdRoute
@@ -122,6 +161,27 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -158,6 +218,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
+  ProgressRoute: ProgressRoute,
+  ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
   LevelsLevelRoute: LevelsLevelRoute,
   TasksTaskIdRoute: TasksTaskIdRoute,
