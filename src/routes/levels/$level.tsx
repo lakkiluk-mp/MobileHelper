@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { LEVELS } from "@/lib/catalog";
 import { pathOf } from "@/lib/path";
 import { SyncNote, useStudy } from "@/lib/study";
+import { TheoryText } from "@/components/theory-text";
+import { useState } from "react";
 
 export const Route = createFileRoute("/levels/$level")({
   beforeLoad: ({ params }) => {
@@ -17,6 +19,7 @@ function LevelPage() {
   const meta = LEVELS.find((item) => item.level === level);
   const { cards, progress, ready } = useStudy();
   const steps = pathOf(cards, progress).filter((step) => step.card.level === level);
+  const [theoryOpen, setTheoryOpen] = useState(true);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-5 py-8">
@@ -28,6 +31,23 @@ function LevelPage() {
         <h1 className="mt-1 text-3xl text-ink">{meta?.title}</h1>
         <p className="mt-2 text-sm text-pretty text-muted">{meta?.blurb}</p>
       </header>
+      {meta ? (
+        <div className="mb-6">
+          <button
+            type="button"
+            aria-expanded={theoryOpen}
+            onClick={() => setTheoryOpen((value) => !value)}
+            className="min-h-11 text-sm text-mark"
+          >
+            {theoryOpen ? "Скрыть теорию" : "Теория темы"}
+          </button>
+          {theoryOpen ? (
+            <div className="mt-2">
+              <TheoryText text={meta.intro} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <ol className="flex flex-col">
         {steps.map((step) => {
           const locked = ready && step.state === "locked";

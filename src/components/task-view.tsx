@@ -1,6 +1,7 @@
 import { runInBrowser } from "@/lib/browser-runner";
 import { snippetAfterInput, snippetsEnabled, type SnippetEdit } from "@/lib/snippets";
 import { useStudy } from "@/lib/study";
+import { TheoryText } from "@/components/theory-text";
 import { compareTapes, type TapeEvent } from "@etalon/runner";
 import type { Card, PredictCard, ProgressStatus } from "@etalon/shared";
 import { Link } from "@tanstack/react-router";
@@ -12,22 +13,13 @@ const RATINGS: Array<{ id: ProgressStatus; label: string }> = [
   { id: "knew", label: "Знал" },
 ];
 
-function TheoryText({ text }: { text: string }) {
+function WhyPanel({ text }: { text: string }) {
   return (
-    <div className="space-y-3 text-sm leading-relaxed text-pretty text-ink">
-      {text.split(/\n\n+/).map((paragraph) => (
-        <p key={paragraph.slice(0, 24)}>
-          {paragraph.split(/(`[^`]+`)/g).map((part) =>
-            part.startsWith("`") && part.endsWith("`") ? (
-              <code key={part} className="font-mono text-mark">
-                {part.slice(1, -1)}
-              </code>
-            ) : (
-              <span key={part}>{part}</span>
-            ),
-          )}
-        </p>
-      ))}
+    <div className="mt-6 border-t border-line pt-4">
+      <p className="text-sm text-muted">Почему так</p>
+      <div className="mt-3">
+        <TheoryText text={text} />
+      </div>
     </div>
   );
 }
@@ -86,6 +78,7 @@ function PredictRun({ card }: { card: PredictCard }) {
   const [tape, setTape] = useState<TapeEvent[] | null>(null);
   const [running, setRunning] = useState(false);
   const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState(false);
 
   const sameMode = strict === card.strict;
   const compared = tape && sameMode ? compareTapes(tape, card.expected) : null;
@@ -125,6 +118,14 @@ function PredictRun({ card }: { card: PredictCard }) {
         >
           {open ? "Скрыть ответ" : "Показать ответ"}
         </button>
+        <button
+          type="button"
+          aria-pressed={why}
+          onClick={() => setWhy((value) => !value)}
+          className="min-h-11 rounded-full border border-line px-4 text-sm text-ink"
+        >
+          {why ? "Скрыть разбор" : "Почему так"}
+        </button>
       </div>
       {tape ? (
         <div className="mt-4">
@@ -138,14 +139,12 @@ function PredictRun({ card }: { card: PredictCard }) {
       {open ? (
         <div className="mt-6 border-t border-line pt-4">
           <p className="font-serif text-2xl text-ink">{card.answer}</p>
-          <div className="mt-4">
-            <TheoryText text={card.theory} />
-          </div>
           {card.variants?.map((variant) => (
             <VariantBlock key={variant.id} code={variant.code} answer={variant.answer} theory={variant.theory} expected={variant.expected} strict={card.strict} />
           ))}
         </div>
       ) : null}
+      {why ? <WhyPanel text={card.theory} /> : null}
       <Ratings taskId={card.id} />
     </div>
   );
@@ -165,6 +164,7 @@ function VariantBlock({
   strict: boolean;
 }) {
   const [tape, setTape] = useState<TapeEvent[] | null>(null);
+  const [why, setWhy] = useState(false);
   return (
     <div className="mt-6">
       <p className="text-sm text-muted">Вариант</p>
@@ -189,9 +189,19 @@ function VariantBlock({
         </div>
       ) : null}
       <p className="mt-3 font-medium">{answer}</p>
-      <div className="mt-2">
-        <TheoryText text={theory} />
-      </div>
+      <button
+        type="button"
+        aria-pressed={why}
+        onClick={() => setWhy((value) => !value)}
+        className="mt-3 min-h-11 rounded-full border border-line px-4 text-sm text-ink"
+      >
+        {why ? "Скрыть разбор" : "Почему так"}
+      </button>
+      {why ? (
+        <div className="mt-3">
+          <TheoryText text={theory} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -202,6 +212,7 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
   const [tape, setTape] = useState<TapeEvent[] | null>(null);
   const [running, setRunning] = useState(false);
   const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState(false);
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const prevRef = useRef(card.starter);
   const caretRef = useRef<number | null>(null);
@@ -320,6 +331,14 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
         <button type="button" onClick={() => setOpen((value) => !value)} className="min-h-11 rounded-full border border-line px-4 text-sm">
           {open ? "Скрыть эталон" : "Показать эталон"}
         </button>
+        <button
+          type="button"
+          aria-pressed={why}
+          onClick={() => setWhy((value) => !value)}
+          className="min-h-11 rounded-full border border-line px-4 text-sm text-ink"
+        >
+          {why ? "Скрыть разбор" : "Почему так"}
+        </button>
       </div>
       {tape ? (
         <div className="mt-4">
@@ -336,11 +355,9 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
           <pre className="overflow-x-auto rounded-lg border border-line bg-card p-4 font-mono text-sm leading-relaxed">
             <code>{card.solution}</code>
           </pre>
-          <div className="mt-4">
-            <TheoryText text={card.theory} />
-          </div>
         </div>
       ) : null}
+      {why ? <WhyPanel text={card.theory} /> : null}
       <Ratings taskId={card.id} />
     </div>
   );

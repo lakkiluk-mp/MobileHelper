@@ -1,9 +1,10 @@
 import { LEVELS } from "@/lib/catalog";
 import { pathOf, type PathState, type PathStep } from "@/lib/path";
 import { useStudy } from "@/lib/study";
+import { TheoryText } from "@/components/theory-text";
 import { Link } from "@tanstack/react-router";
 import { Check, Lock } from "lucide-react";
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 const X_PERCENT = [50, 76, 50, 24] as const;
 
@@ -127,6 +128,7 @@ export function PathView() {
   const steps = pathOf(cards, progress);
   const current = steps.find((step) => step.state === "current");
   const currentRef = useRef<HTMLLIElement>(null);
+  const [theoryLevel, setTheoryLevel] = useState<number | null>(null);
 
   useEffect(() => {
     const node = currentRef.current;
@@ -156,22 +158,36 @@ export function PathView() {
         if (section.length === 0) return null;
         const done = section.filter((step) => passed(step.state)).length;
         const width = section.length === 0 ? 0 : Math.round((done / section.length) * 100);
+        const theoryOpen = theoryLevel === level.level;
         return (
           <section key={level.level} className="mb-12">
-            <Link
-              to="/levels/$level"
-              params={{ level: String(level.level) }}
-              className="mb-2 block rounded-2xl border border-line bg-card px-4 py-3 text-ink no-underline"
-            >
-              <p className="font-serif text-2xl text-mark tabular-nums">{String(level.level).padStart(2, "0")}</p>
-              <p className="mt-1 font-medium">{level.title}</p>
-              <p className="mt-1 text-sm text-muted tabular-nums">
-                {done}/{section.length}
-              </p>
-              <div className="mt-3 h-1 overflow-hidden rounded-full bg-line" aria-hidden="true">
-                <div className="h-full bg-mark" style={{ width: `${width}%` }} />
+            <div className="mb-2 rounded-2xl border border-line bg-card">
+              <Link to="/levels/$level" params={{ level: String(level.level) }} className="block px-4 py-3 text-ink no-underline">
+                <p className="font-serif text-2xl text-mark tabular-nums">{String(level.level).padStart(2, "0")}</p>
+                <p className="mt-1 font-medium">{level.title}</p>
+                <p className="mt-1 text-sm text-muted tabular-nums">
+                  {done}/{section.length}
+                </p>
+                <div className="mt-3 h-1 overflow-hidden rounded-full bg-line" aria-hidden="true">
+                  <div className="h-full bg-mark" style={{ width: `${width}%` }} />
+                </div>
+              </Link>
+              <div className="border-t border-line px-4">
+                <button
+                  type="button"
+                  aria-expanded={theoryOpen}
+                  onClick={() => setTheoryLevel(theoryOpen ? null : level.level)}
+                  className="min-h-11 text-sm text-mark"
+                >
+                  {theoryOpen ? "Скрыть теорию" : "Теория темы"}
+                </button>
+                {theoryOpen ? (
+                  <div className="pb-4">
+                    <TheoryText text={level.intro} />
+                  </div>
+                ) : null}
               </div>
-            </Link>
+            </div>
             <Trail section={section} currentRef={currentRef} />
           </section>
         );
