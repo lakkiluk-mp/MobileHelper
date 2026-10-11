@@ -1,5 +1,5 @@
 import { LEVELS } from "@/lib/catalog";
-import { pathOf, type PathState, type PathStep } from "@/lib/path";
+import { ladderOf, pathOf, type PathState, type PathStep } from "@/lib/path";
 import { useStudy } from "@/lib/study";
 import { TheoryText } from "@/components/theory-text";
 import { Link } from "@tanstack/react-router";
@@ -12,8 +12,8 @@ function xOf(index: number): number {
   return X_PERCENT[index % X_PERCENT.length] ?? 50;
 }
 
-function rowSpan(state: PathState): number {
-  return state === "current" ? 168 : 104;
+function rowSpan(state: PathState | "rest"): number {
+  return state === "current" || state === "rest" ? 168 : 104;
 }
 
 function passed(state: PathState): boolean {
@@ -33,19 +33,25 @@ function nodeClass(state: PathState): string {
 }
 
 type Placed = { step: PathStep; x: number; y: number };
+type RestSpot = { count: number; level: number; x: number; y: number };
 
-function place(section: PathStep[]): { items: Placed[]; height: number } {
+function place(shown: PathStep[], rest: PathStep[]): { items: Placed[]; restSpot: RestSpot | null; height: number } {
   let cursor = 0;
-  const items = section.map((step) => {
+  const items = shown.map((step, index) => {
     const span = rowSpan(step.state);
     const y = cursor + span / 2;
     cursor += span;
-    return { step, x: xOf(step.index), y };
+    return { step, x: xOf(index), y };
   });
-  return { items, height: cursor };
+  if (rest.length === 0) return { items, restSpot: null, height: cursor };
+  const level = rest[0]?.card.level ?? 1;
+  const span = rowSpan("rest");
+  const y = cursor + span / 2;
+  cursor += span;
+  return { items, restSpot: { count: rest.length, level, x: xOf(shown.length), y }, height: cursor };
 }
 
-function bend(a: Placed, b: Placed): string {
+function bend(a: { x: number; y: number }, b: { x: number; y: number }): string {
   const mid = (a.y + b.y) / 2;
   return `M ${a.x} ${a.y} C ${a.x} ${mid} ${b.x} ${mid} ${b.x} ${b.y}`;
 }
@@ -89,8 +95,43 @@ function StepNode({ item, currentRef }: { item: Placed; currentRef: RefObject<HT
   );
 }
 
-function Trail({ section, currentRef }: { section: PathStep[]; currentRef: RefObject<HTMLLIElement | null> }) {
-  const { items, height } = place(section);
+function RestNode({ spot }: { spot: RestSpot }) {
+  const label =
+    spot.count === 1 ? "Ещё 1 нерешённая задача" : `Ещё ${spot.count} нерешённых задач`;
+  return (
+    <li className="absolute" style={{ left: `${spot.x}%`, top: spot.y, transform: "translate(-50%, -50%)" }}>
+      <Link
+        to="/levels/$level"
+        params={{ level: String(spot.level) }}
+        aria-label={label}
+        className="relative z-10 flex size-16 items-center justify-center rounded-full border border-[#d9d0c2] bg-[#e7e1d6] font-mono text-sm text-muted no-underline tabular-nums active:scale-[0.96]"
+      >
+        +{spot.count}
+      </Link>
+      <p className="absolute top-full left-1/2 mt-3 w-36 -translate-x-1/2 text-center text-sm text-pretty text-muted">
+        Новые задачи
+      </p>
+    </li>
+  );
+}
+
+function Trail({ shown, rest, currentRef }: { shown: PathStep[]; rest: PathStep[]; currentRef: RefObject<HTMLLIElement | null> }) {
+  const { items, restSpot, height } = place(shown, rest);
+  const joints: Array<{ from: { x: number; y: number }; to: { x: number; y: number }; key: string; done: boolean }> = [];
+  items.slice(0, -1).forEach((item, index) => {
+    const next = items[index + 1];
+    if (!next) return;
+    joints.push({
+      from: item,
+      to: next,
+      key: `${item.step.card.id}-${next.step.card.id}`,
+      done: passed(item.step.state),
+    });
+  });
+  const last = items.at(-1);
+  if (last && restSpot) {
+    joints.push({ from: last, to: restSpot, key: `${last.step.card.id}-rest`, done: false });
+  }
   return (
     <ol className="relative mx-auto w-full max-w-sm list-none p-0" style={{ height }}>
       <svg
@@ -99,26 +140,22 @@ function Trail({ section, currentRef }: { section: PathStep[]; currentRef: RefOb
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        {items.slice(0, -1).map((item, index) => {
-          const next = items[index + 1];
-          if (!next) return null;
-          const done = passed(item.step.state);
-          return (
-            <path
-              key={`${item.step.card.id}-${next.step.card.id}`}
-              d={bend(item, next)}
-              fill="none"
-              stroke={done ? "var(--color-mark)" : "#d9d0c2"}
-              strokeWidth={done ? 3 : 2}
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          );
-        })}
+        {joints.map((joint) => (
+          <path
+            key={joint.key}
+            d={bend(joint.from, joint.to)}
+            fill="none"
+            stroke={joint.done ? "var(--color-mark)" : "#d9d0c2"}
+            strokeWidth={joint.done ? 3 : 2}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
       </svg>
       {items.map((item) => (
         <StepNode key={item.step.card.id} item={item} currentRef={currentRef} />
       ))}
+      {restSpot ? <RestNode spot={restSpot} /> : null}
     </ol>
   );
 }
@@ -126,6 +163,7 @@ function Trail({ section, currentRef }: { section: PathStep[]; currentRef: RefOb
 export function PathView() {
   const { cards, progress } = useStudy();
   const steps = pathOf(cards, progress);
+  const { shown, rest } = ladderOf(steps);
   const current = steps.find((step) => step.state === "current");
   const currentRef = useRef<HTMLLIElement>(null);
   const [theoryLevel, setTheoryLevel] = useState<number | null>(null);
@@ -153,6 +191,7 @@ export function PathView() {
           <p className="rounded-full border border-line bg-card px-5 py-3 text-center text-sm text-ink">Тропа пройдена</p>
         )}
       </div>
+      {shown.length > 0 ? <Trail shown={shown} rest={rest} currentRef={currentRef} /> : null}
       {LEVELS.map((level) => {
         const section = steps.filter((step) => step.card.level === level.level);
         if (section.length === 0) return null;
@@ -160,8 +199,8 @@ export function PathView() {
         const width = section.length === 0 ? 0 : Math.round((done / section.length) * 100);
         const theoryOpen = theoryLevel === level.level;
         return (
-          <section key={level.level} className="mb-12">
-            <div className="mb-2 rounded-2xl border border-line bg-card">
+          <section key={level.level} className="mt-10">
+            <div className="rounded-2xl border border-line bg-card">
               <Link to="/levels/$level" params={{ level: String(level.level) }} className="block px-4 py-3 text-ink no-underline">
                 <p className="font-serif text-2xl text-mark tabular-nums">{String(level.level).padStart(2, "0")}</p>
                 <p className="mt-1 font-medium">{level.title}</p>
@@ -188,7 +227,6 @@ export function PathView() {
                 ) : null}
               </div>
             </div>
-            <Trail section={section} currentRef={currentRef} />
           </section>
         );
       })}
