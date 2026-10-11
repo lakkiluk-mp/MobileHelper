@@ -27,6 +27,16 @@ export async function runInNode(code: string, options: RunOptions): Promise<Tape
     }
   };
 
+  // В песочницу кладём ТОЛЬКО то, чего у неё нет: свой console, таймеры и мост
+  // отчёта. Встроенные объекты (`Object`, `Array`, `Promise`, `Error`, …) vm
+  // создаёт в самом контексте — они обязаны быть в его realm.
+  //
+  // Раньше сюда передавались host-версии `Object`, `Array` и прочих. Из-за
+  // этого код ученика получал объекты чужого realm, и в песочнице ломалось
+  // то, что в браузере работает: `[] instanceof Array` давало `false`,
+  // `[].constructor === Array` — тоже, а `Array.prototype.last = ...` не
+  // влияло на литералы массивов. Node-хост расходился с iframe, то есть
+  // golden-тест проверял не то поведение, которое видит ученик.
   const sandbox: Record<string, unknown> = {
     console: {
       log: (...args: unknown[]) => push({ type: "log", args: args.map((arg) => serializeArg(arg)) }),
@@ -56,31 +66,6 @@ export async function runInNode(code: string, options: RunOptions): Promise<Tape
         }
       });
     },
-    Promise,
-    Object,
-    Array,
-    Number,
-    String,
-    Boolean,
-    Symbol,
-    BigInt,
-    Date,
-    Math,
-    JSON,
-    Error,
-    TypeError,
-    ReferenceError,
-    RangeError,
-    SyntaxError,
-    EvalError,
-    URIError,
-    isNaN,
-    isFinite,
-    parseInt,
-    parseFloat,
-    NaN,
-    Infinity,
-    undefined,
     __serialize: serializeArg,
     __report: (event: TapeEvent) => {
       if (!event || (event.type !== "log" && event.type !== "error" && event.type !== "test")) return;

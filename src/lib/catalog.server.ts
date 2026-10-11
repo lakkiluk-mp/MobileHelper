@@ -1,14 +1,16 @@
 import { getSql } from "@/lib/db";
 import { loadCardsFromDisk, loadTombstonesFromDisk } from "../../packages/content/src/node-load.ts";
 import { hashAnyCard, seedVersion } from "@etalon/runner";
-import { manifestSchema, type Card, type Manifest } from "@etalon/shared";
+import { cardSchema, manifestSchema, type Card, type Manifest } from "@etalon/shared";
 
 function hashOf(card: Card): string {
   return hashAnyCard(card);
 }
 
 export async function readManifest(): Promise<Manifest> {
-  const cards = await loadCardsFromDisk();
+  // node-load читает модули уровней как данные, поэтому схему применяем здесь:
+  // это единственная точка, где карточки попадают из диска в базу.
+  const cards = cardSchema.array().parse(await loadCardsFromDisk());
   const tombstones = await loadTombstonesFromDisk();
   const dead = new Set(tombstones.map((tomb) => tomb.id));
   const sql = await getSql();
