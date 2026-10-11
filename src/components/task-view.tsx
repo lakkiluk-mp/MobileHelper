@@ -2,7 +2,7 @@ import { runInBrowser } from "@/lib/browser-runner";
 import { snippetAfterInput, snippetsEnabled, type SnippetEdit } from "@/lib/snippets";
 import { useStudy } from "@/lib/study";
 import { TheoryText } from "@/components/theory-text";
-import { compareTapes, type TapeEvent } from "@etalon/runner";
+import { compareTapes, gradeImplementTape, type TapeEvent } from "@etalon/runner";
 import type { Card, PredictCard, ProgressStatus } from "@etalon/shared";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -81,7 +81,7 @@ function PredictRun({ card }: { card: PredictCard }) {
   const [why, setWhy] = useState(false);
 
   const sameMode = strict === card.strict;
-  const compared = tape && sameMode ? compareTapes(tape, card.expected) : null;
+  const compared = tape ? compareTapes(tape, card.expected) : null;
 
   return (
     <div className="mt-6">
@@ -131,7 +131,15 @@ function PredictRun({ card }: { card: PredictCard }) {
         <div className="mt-4">
           <Tape events={tape} />
           <p className="mt-2 text-sm text-muted">
-            {compared ? (compared.ok ? "Лента совпала с эталоном." : "Лента не совпала с эталоном.") : "Другой режим. Эталон этой карточки записан для другого strict."}
+            {compared
+              ? compared.ok
+                ? sameMode
+                  ? "Лента совпала с эталоном."
+                  : "Лента совпала, хотя эталон записан в другом режиме."
+                : sameMode
+                  ? "Лента не совпала с эталоном."
+                  : "Лента не совпала. Эталон записан в другом режиме, это может быть из-за него."
+              : ""}
           </p>
           <p className="mt-1 text-sm text-muted">Кавычки в ленте — это строка. Число и undefined без кавычек.</p>
         </div>
@@ -236,8 +244,6 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
     caretRef.current = null;
   }, [code]);
 
-  const tests = tape?.filter((event) => event.type === "test") ?? [];
-
   function commit(value: string) {
     prevRef.current = value;
     setCode(value);
@@ -276,6 +282,7 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
         id="solution"
         value={code}
         spellCheck={false}
+        maxLength={20000}
         autoCapitalize="none"
         autoCorrect="off"
         autoComplete="off"
@@ -344,9 +351,7 @@ function ImplementRun({ card }: { card: Extract<Card, { kind: "implement" }> }) 
         <div className="mt-4">
           <Tape events={tape} />
           <p className="mt-2 text-sm text-muted">
-            {tests.length > 0 && tests.every((event) => event.type === "test" && event.pass)
-              ? "Все тесты прошли."
-              : "Есть непрошедшие тесты или ошибка."}
+            {gradeImplementTape(tape, card.tests).ok ? "Все тесты прошли." : "Есть непрошедшие тесты или ошибка."}
           </p>
         </div>
       ) : null}

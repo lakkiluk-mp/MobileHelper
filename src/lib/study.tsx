@@ -48,7 +48,7 @@ function mergeRows(local: ProgressRow[], remote: ProgressRow[]): ProgressRow[] {
   const map = new Map(local.map((row) => [row.taskId, row]));
   for (const row of remote) {
     const current = map.get(row.taskId);
-    if (!current || row.updatedAt > current.updatedAt) map.set(row.taskId, row);
+    if (!current || row.updatedAt >= current.updatedAt) map.set(row.taskId, row);
   }
   return [...map.values()];
 }
@@ -58,16 +58,24 @@ function draftKey(taskId: string): string {
 }
 
 function readLocalDraft(taskId: string): string | null {
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem(draftKey(taskId));
+  try {
+    if (typeof localStorage === "undefined") return null;
+    return localStorage.getItem(draftKey(taskId));
+  } catch {
+    return null;
+  }
 }
 
 function rememberRemoteDrafts(rows: ProgressRow[]): void {
-  if (typeof localStorage === "undefined") return;
-  for (const row of rows) {
-    if (row.draft && localStorage.getItem(draftKey(row.taskId)) == null) {
-      localStorage.setItem(draftKey(row.taskId), row.draft);
+  try {
+    if (typeof localStorage === "undefined") return;
+    for (const row of rows) {
+      if (row.draft && localStorage.getItem(draftKey(row.taskId)) == null) {
+        localStorage.setItem(draftKey(row.taskId), row.draft);
+      }
     }
+  } catch {
+    // Private mode and a full quota must not abort a sync.
   }
 }
 
@@ -104,14 +112,17 @@ async function pushPending(userId: string | undefined): Promise<ProgressRow[]> {
   const pending = await readOutbox();
   const id = deviceId();
   if (pending.length > 0) {
-    await pushDeviceProgress({ data: { deviceId: id, items: pending } });
-    if (userId) await pushUserProgress({ data: { items: pending } });
-    const latest = await readOutbox();
-    const sent = pending.filter((row) => {
-      const now = latest.find((item) => item.taskId === row.taskId);
-      return now?.updatedAt === row.updatedAt;
-    });
-    await clearOutbox(sent.map((row) => row.taskId));
+    for (let index = 0; index < pending.length; index += 100) {
+      const chunk = pending.slice(index, index + 100);
+      await pushDeviceProgress({ data: { deviceId: id, items: chunk } });
+      if (userId) await pushUserProgress({ data: { items: chunk } });
+      const latest = await readOutbox();
+      const sent = chunk.filter((row) => {
+        const now = latest.find((item) => item.taskId === row.taskId);
+        return now?.updatedAt === row.updatedAt;
+      });
+      await clearOutbox(sent.map((row) => row.taskId));
+    }
   }
   if (!userId) return readProgress();
   await claimDevice({ data: { deviceId: id } });
@@ -221,8 +232,12 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       rate,
       draft: (taskId) => readLocalDraft(taskId) ?? progress[taskId]?.draft ?? "",
       saveDraft: (taskId, draft) => {
-        if (typeof localStorage === "undefined") return;
-        localStorage.setItem(draftKey(taskId), draft);
+        try {
+          if (typeof localStorage === "undefined") return;
+          localStorage.setItem(draftKey(taskId), draft);
+        } catch {
+          // The editor keeps the text in memory if the quota is full.
+        }
       },
     }),
     [cards, note, offline, progress, rate, ready],

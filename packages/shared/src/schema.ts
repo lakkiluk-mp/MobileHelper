@@ -20,10 +20,10 @@ export const tapeEventSchema = z.discriminatedUnion("type", [
 
 export const predictVariantSchema = z.object({
   id: z.string().min(1),
-  code: z.string(),
-  expected: z.array(tapeEventSchema),
-  answer: z.string(),
-  theory: z.string(),
+  code: z.string().min(1),
+  expected: z.array(tapeEventSchema).min(1),
+  answer: z.string().min(1),
+  theory: z.string().min(1),
 });
 
 const identity = {
@@ -40,21 +40,21 @@ export const predictCardSchema = z.object({
   ...identity,
   kind: z.literal("predict"),
   strict: z.boolean(),
-  code: z.string(),
-  expected: z.array(tapeEventSchema),
-  answer: z.string(),
-  theory: z.string(),
+  code: z.string().min(1),
+  expected: z.array(tapeEventSchema).min(1),
+  answer: z.string().min(1),
+  theory: z.string().min(1),
   variants: z.array(predictVariantSchema).optional(),
 });
 
 export const implementCardSchema = z.object({
   ...identity,
   kind: z.literal("implement"),
-  statement: z.string(),
-  starter: z.string(),
-  tests: z.array(z.object({ name: z.string(), code: z.string() })),
-  solution: z.string(),
-  theory: z.string(),
+  statement: z.string().min(1),
+  starter: z.string().min(1),
+  tests: z.array(z.object({ name: z.string().min(1), code: z.string().min(1) })).min(1),
+  solution: z.string().min(1),
+  theory: z.string().min(1),
   waitMs: z.number().int().positive().optional(),
 });
 

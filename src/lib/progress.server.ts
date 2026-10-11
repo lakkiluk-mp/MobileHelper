@@ -8,6 +8,13 @@ export type ProgressInput = {
   draft?: string;
 };
 
+function clampUpdatedAt(value: string): string {
+  const parsed = Date.parse(value);
+  const now = Date.now();
+  if (Number.isNaN(parsed) || parsed > now) return new Date(now).toISOString();
+  return new Date(parsed).toISOString();
+}
+
 type ProgressSqlRow = {
   task_id: string;
   status: ProgressStatus;
@@ -24,10 +31,11 @@ async function upsert(
   const sql = await getSql();
   for (const item of items) {
     const draft = item.draft ?? null;
+    const updatedAt = clampUpdatedAt(item.updatedAt);
     if (table === "device_progress") {
       await sql`
         insert into device_progress (device_id, task_id, status, updated_at, draft)
-        values (${ownerId}, ${item.taskId}, ${item.status}, ${item.updatedAt}, ${draft})
+        values (${ownerId}, ${item.taskId}, ${item.status}, ${updatedAt}, ${draft})
         on conflict (device_id, task_id) do update set
           status = excluded.status,
           updated_at = excluded.updated_at,
@@ -37,7 +45,7 @@ async function upsert(
     } else {
       await sql`
         insert into user_progress (user_id, task_id, status, updated_at, draft)
-        values (${ownerId}, ${item.taskId}, ${item.status}, ${item.updatedAt}, ${draft})
+        values (${ownerId}, ${item.taskId}, ${item.status}, ${updatedAt}, ${draft})
         on conflict (user_id, task_id) do update set
           status = excluded.status,
           updated_at = excluded.updated_at,

@@ -18,7 +18,7 @@ export const SERIALIZE_SOURCE = `function __serialize(value, depth, seen) {
   if (kind === "function") return "[Function: " + (value.name || "anonymous") + "]";
   if (kind !== "object") return String(value);
   if (depth >= 3) return Array.isArray(value) ? "[Array]" : "[Object]";
-  if (!seen) seen = new WeakSet();
+  if (!seen || typeof seen.has !== "function" || typeof seen.add !== "function") seen = new WeakSet();
   if (seen.has(value)) return "[Circular]";
   seen.add(value);
   try {
