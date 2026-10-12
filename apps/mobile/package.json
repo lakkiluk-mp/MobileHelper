@@ -31,7 +31,7 @@
     "start": "expo start --go",
     "android": "sh scripts/clear-metro.sh && expo run:android",
     "ios": "sh scripts/clear-metro.sh && expo run:ios",
-    "build:apk": "expo prebuild --platform android --no-install && cd android && ./gradlew assembleDebug",
+    "build:apk": "sh scripts/build-apk.sh",
     "typecheck": "tsc --noEmit"
   },
   "private": true
