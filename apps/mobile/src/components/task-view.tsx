@@ -1,12 +1,22 @@
-import { CodeBlock, CodeSnippet } from "@/components/code-block";
+import { CodeBlock, CodeEditor, CodeSnippet } from "@/components/code-block";
 import { SyncNote } from "@/components/shell";
 import { T } from "@/components/text";
 import { TheoryText } from "@/components/theory-text";
+import { discussInDeepseek } from "@/lib/deepseek";
 import { runInPhone } from "@/lib/runner";
 import { useStudy } from "@/lib/study";
 import { compareTapes, gradeImplementTape, type TapeEvent } from "@etalon/runner";
 import type { Card } from "@etalon/shared";
-import { ANSWER_WORDS, checkLine, insertWord, suggestWords } from "@etalon/web-answer";
+import {
+  ANSWER_WORDS,
+  answerSteps,
+  checkLine,
+  insertWord,
+  orderChoices,
+  suggestWords,
+  type AnswerStep,
+  type OrderChoice,
+} from "@etalon/web-answer";
 import { snippetAfterInput } from "@etalon/web-snippets";
 import { colors, fonts } from "@/theme";
 import { router } from "expo-router";
@@ -152,6 +162,58 @@ function AnswerBox({
         placeholderTextColor={colors.faint}
         style={[styles.editor, styles.answerInput, wrong ? styles.answerWrong : null]}
       />
+      {wrong ? (
+        <T size={14} color={colors.bad}>
+          Вывод {accepted.length + 1} — неверно
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
+function choiceFits(choice: OrderChoice, step: AnswerStep, code: string): boolean {
+  if (choice.id === "nothing") return false;
+  if (choice.id === "error") return step.kind === "error";
+  if (step.kind !== "value") return false;
+  return checkLine(choice.line, { type: "log", args: [step.arg] }, code);
+}
+
+function ChoiceAnswers({
+  choices,
+  accepted,
+  wrong,
+  onPick,
+}: {
+  choices: OrderChoice[];
+  accepted: string[];
+  wrong: boolean;
+  onPick: (choice: OrderChoice) => void;
+}) {
+  return (
+    <View style={styles.answer}>
+      <T mono size={11} color={colors.muted} style={styles.kicker}>
+        ЧТО ДАЛЬШЕ · {accepted.length + 1}
+      </T>
+      {accepted.map((line, index) => (
+        <T key={`${index}-${line}`} mono size={13} color={colors.mark}>
+          › {line}
+        </T>
+      ))}
+      <View style={styles.choices}>
+        {choices.map((choice) => (
+          <Pressable
+            key={choice.id}
+            accessibilityRole="button"
+            accessibilityLabel={choice.label}
+            onPress={() => onPick(choice)}
+            style={styles.choice}
+          >
+            <T mono size={15} numberOfLines={3}>
+              {choice.label}
+            </T>
+          </Pressable>
+        ))}
+      </View>
       {wrong ? (
         <T size={14} color={colors.bad}>
           Вывод {accepted.length + 1} — неверно
@@ -488,6 +550,26 @@ export function TaskScreenBody({
 
   const compared = card.kind === "predict" && tape ? compareTapes(tape, card.expected) : null;
   const graded = card.kind === "implement" && tape ? gradeImplementTape(tape, card.tests) : null;
+  const steps = card.kind === "predict" ? answerSteps(card.expected) : [];
+  const choices = card.kind === "predict" ? orderChoices(card.code, card.expected) : null;
+
+  function pickChoice(choice: OrderChoice) {
+    if (card.kind !== "predict") return;
+    const step = steps[accepted.length];
+    if (!step) return;
+    if (!choiceFits(choice, step, card.code)) {
+      setWrong(true);
+      setAttempts((value) => value + 1);
+      return;
+    }
+    const next = [...accepted, choice.label];
+    setAccepted(next);
+    setWrong(false);
+    if (next.length < steps.length) return;
+    Keyboard.dismiss();
+    rate(card.id, attempts === 0 ? "knew" : "unsure");
+    setSolved(true);
+  }
 
   return (
     <View ref={keyboard.rootRef} onLayout={keyboard.onLayout} style={styles.screen}>
@@ -520,7 +602,14 @@ export function TaskScreenBody({
               {solved && accepted.length > 0 ? (
                 <AnswerResult lines={accepted} misses={attempts} />
               ) : null}
-              {revealed ? null : (
+              {revealed ? null : choices ? (
+                <ChoiceAnswers
+                  choices={choices}
+                  accepted={accepted}
+                  wrong={wrong}
+                  onPick={pickChoice}
+                />
+              ) : (
                 <AnswerBox
                   value={answer}
                   onChange={(value) => {
@@ -553,15 +642,10 @@ export function TaskScreenBody({
                   </T>
                 </Pressable>
               </View>
-              <TextInput
+              <CodeEditor
                 value={code}
                 selection={selection}
                 onSelectionChange={(event) => setSelection(event.nativeEvent.selection)}
-                multiline
-                spellCheck={false}
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={20000}
                 onChangeText={(value) => {
                   const prev = prevRef.current;
                   let index = 0;
@@ -585,7 +669,6 @@ export function TaskScreenBody({
                   }
                   apply(value.slice(0, edit.from) + edit.text + value.slice(edit.to), edit.caret);
                 }}
-                style={styles.editor}
               />
             </>
           )}
@@ -658,7 +741,7 @@ export function TaskScreenBody({
       <ActionBar lift={keyboard}>
         {keyboard.open ? (
           <>
-            {answerFocused && card.kind === "predict" && !revealed ? (
+            {answerFocused && card.kind === "predict" && !revealed && !choices ? (
               <AnswerWords value={answer} caret={answerSelection.end} onApply={applyAnswer} />
             ) : null}
             <View style={styles.actions}>
@@ -677,7 +760,7 @@ export function TaskScreenBody({
                   <Play size={16} color={colors.paper} />
                   <ActionLabel tone="primary">{running ? "Считаю" : "Тесты"}</ActionLabel>
                 </ActionButton>
-              ) : !revealed ? (
+              ) : !revealed && !choices ? (
                 <ActionButton primary disabled={!answer.trim()} onPress={checkPredict}>
                   <ActionLabel tone="primary">Проверить</ActionLabel>
                 </ActionButton>
@@ -689,9 +772,11 @@ export function TaskScreenBody({
             <ActionButton onPress={giveUp}>
               <ActionLabel>Сдаюсь</ActionLabel>
             </ActionButton>
-            <ActionButton primary disabled={!answer.trim()} onPress={checkPredict}>
-              <ActionLabel tone="primary">Проверить</ActionLabel>
-            </ActionButton>
+            {choices ? null : (
+              <ActionButton primary disabled={!answer.trim()} onPress={checkPredict}>
+                <ActionLabel tone="primary">Проверить</ActionLabel>
+              </ActionButton>
+            )}
           </View>
         ) : (
           <View style={styles.actions}>
@@ -720,6 +805,19 @@ export function TaskScreenBody({
               </ActionLabel>
             </ActionButton>
           </View>
+        )}
+        {keyboard.open ? null : (
+          <Pressable
+            accessibilityLabel="Обсудить с Дипсик"
+            onPress={() => {
+              void discussInDeepseek(card);
+            }}
+            style={styles.discuss}
+          >
+            <T size={15} numberOfLines={1}>
+              Обсудить с Дипсик
+            </T>
+          </Pressable>
         )}
         {keyboard.open ? null : (
           <Pressable
@@ -786,6 +884,18 @@ const styles = StyleSheet.create({
   },
   answerInput: { minHeight: 48 },
   answerWrong: { borderColor: colors.bad },
+  choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  choice: {
+    minHeight: 44,
+    maxWidth: "100%",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    justifyContent: "center",
+  },
   words: { flexDirection: "row", gap: 6 },
   word: {
     minHeight: 36,
@@ -803,6 +913,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     paddingTop: 12,
     gap: 10,
+  },
+  discuss: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
   },
   next: {
     flex: 1,

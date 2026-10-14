@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Settings() {
-  const { snippetsOn, setSnippetsOn, ready } = useStudy();
+  const { snippetsOn, setSnippetsOn, openAll, setOpenAll, ready } = useStudy();
   const catalog = snippetCatalog();
   const immediate = catalog.filter((item) => item.mode === "immediate");
   const boundary = catalog.filter((item) => item.mode === "boundary");
@@ -26,6 +26,25 @@ export default function Settings() {
         <T size={36} style={styles.title}>
           Настройки
         </T>
+        <T size={24} style={styles.section}>
+          Темы
+        </T>
+        <T size={14} color={colors.muted} style={styles.copy}>
+          Все уровни открыты, можно зайти в любую задачу. Выключи — снова по порядку тропы.
+        </T>
+        {ready ? (
+          <Pressable
+            accessibilityState={{ selected: openAll }}
+            onPress={() => setOpenAll(!openAll)}
+            style={openAll ? styles.on : styles.off}
+          >
+            <T size={14} color={openAll ? colors.paper : colors.ink}>
+              {openAll ? "Все темы открыты" : "Темы по порядку"}
+            </T>
+          </Pressable>
+        ) : (
+          <View style={styles.pulse} />
+        )}
         <T size={24} style={styles.section}>
           Автодополнение
         </T>

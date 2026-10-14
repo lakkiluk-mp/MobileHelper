@@ -27,7 +27,7 @@ function Back() {
 export default function TaskPage() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const id = Array.isArray(taskId) ? taskId[0] : taskId;
-  const { cards, ready, progress } = useStudy();
+  const { cards, ready, progress, openAll } = useStudy();
   const insets = useSafeAreaInsets();
   const card = cards.find((item) => item.id === id);
   if (!ready || !id) {
@@ -51,7 +51,7 @@ export default function TaskPage() {
   }
   const steps = pathOf(cards, progress);
   const step = steps.find((item) => item.card.id === card.id);
-  if (step?.state === "locked") {
+  if (step?.state === "locked" && !openAll) {
     const { next: current, gate } = lockOf(cards, progress, steps, card);
     return (
       <View style={[styles.page, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -85,13 +85,13 @@ export default function TaskPage() {
         key={card.id}
         card={card}
         nextId={next?.card.id ?? null}
-        nextLocked={next?.state === "locked"}
+        nextLocked={next?.state === "locked" && !openAll}
         onNext={() => {
           if (!next) {
             router.replace("/");
             return;
           }
-          if (next.state === "locked") return;
+          if (next.state === "locked" && !openAll) return;
           router.replace(`/tasks/${next.card.id}`);
         }}
         header={

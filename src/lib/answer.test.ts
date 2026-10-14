@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { TapeEvent } from "@etalon/shared";
 import {
+  answerSteps,
   canonical,
   checkAnswer,
   checkLine,
   insertWord,
+  orderChoices,
   splitValues,
   suggestWords,
 } from "./answer.ts";
@@ -80,6 +82,85 @@ describe("suggestWords", () => {
     assert.deepEqual(insertWord("1", 1, "null"), { text: "1 null", caret: 6 });
     assert.deepEqual(insertWord("", 0, "NaN"), { text: "NaN", caret: 3 });
     assert.deepEqual(insertWord("1", 1, '""'), { text: '1 ""', caret: 3 });
+  });
+});
+
+describe("orderChoices", () => {
+  it("offers code literals in source order plus nothing", () => {
+    const code =
+      "console.log(1);\nsetTimeout(() => console.log(2));\nPromise.resolve().then(() => console.log(3));\nconsole.log(4);\n";
+    const expected = [log("1"), log("4"), log("3"), log("2")];
+    const choices = orderChoices(code, expected);
+    assert.deepEqual(
+      choices?.map((choice) => choice.label),
+      ["1", "2", "3", "4", "ошибка", "ничего"],
+    );
+    assert.equal(checkLine("1", expected[0]!, code), true);
+    assert.equal(checkLine("4", expected[1]!, code), true);
+  });
+
+  it("keeps string quotes from the snippet", () => {
+    const code = "console.log('start');\nconsole.log('a');\n";
+    const choices = orderChoices(code, [log('"start"'), log('"a"')]);
+    assert.deepEqual(
+      choices?.map((choice) => choice.label),
+      ["'start'", "'a'", "ошибка", "ничего"],
+    );
+    assert.equal(checkLine(choices![0]!.line, log('"start"'), code), true);
+  });
+
+  it("offers a missing number even when the code only has a longer one", () => {
+    const choices = orderChoices("console.log(x);\nconst n = 10;\n", [log("1")]);
+    assert.equal(choices?.some((choice) => choice.label === "1"), true);
+    assert.equal(choices?.some((choice) => choice.label === "10"), true);
+    assert.equal(checkLine("1", log("1"), ""), true);
+    assert.equal(checkLine("10", log("1"), ""), false);
+  });
+
+  it("splits one log into single values and still covers a computed result", () => {
+    assert.equal(answerSteps([log("1", "2"), error("TypeError")]).length, 3);
+    const many = orderChoices("console.log(1, 2);\n", [log("1", "2")]);
+    assert.equal(many?.some((choice) => choice.label === "1"), true);
+    assert.equal(many?.some((choice) => choice.label === "2"), true);
+    const computed = orderChoices("console.log(e * 10);\n", [log("20")]);
+    assert.equal(computed?.some((choice) => choice.label === "20"), true);
+    assert.equal(computed?.some((choice) => choice.label === "10"), true);
+  });
+
+  it("builds 1, 2 and ошибка when the log is undefined and then throws", () => {
+    const choices = orderChoices("console.log(a);\nvar a = 1;\nconsole.log(b);\nlet b = 2;\n", [
+      log("undefined"),
+      error("ReferenceError"),
+    ]);
+    assert.deepEqual(
+      choices?.map((choice) => choice.label),
+      ["1", "2", "undefined", "ошибка", "ничего"],
+    );
+  });
+
+  it("keeps a literal that is in the code but does not print", () => {
+    const code = "f.bind({ n: 1 }).bind({ n: 2 })();\nf.call({ n: 3 });\nconsole.log(this.n);\n";
+    const choices = orderChoices(code, [log("1"), log("3")]);
+    assert.deepEqual(
+      choices?.map((choice) => choice.label),
+      ["1", "2", "3", "ошибка", "ничего"],
+    );
+  });
+
+  it("keeps null from the snippet as its own button", () => {
+    const code = "console.log('a');\nawait null;\nconsole.log('b');\n";
+    const choices = orderChoices(code, [log('"a"'), log('"b"')]);
+    assert.deepEqual(
+      choices?.map((choice) => choice.label),
+      ["'a'", "null", "'b'", "ошибка", "ничего"],
+    );
+  });
+
+  it("still offers traps when the only printed literal is obvious", () => {
+    assert.deepEqual(
+      orderChoices("x = 10;\nconsole.log(x);\n", [log("10")])?.map((choice) => choice.label),
+      ["10", "ошибка", "ничего"],
+    );
   });
 });
 

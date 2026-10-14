@@ -3,7 +3,7 @@ import { highlightLine, indentOf, type TokenKind } from "@etalon/web-highlight";
 import { colors, fonts } from "@/theme";
 import { Maximize2, WrapText, X } from "lucide-react-native";
 import { useState, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type NativeSyntheticEvent, type TextInputSelectionChangeEventData } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { T } from "./text";
 
@@ -166,6 +166,66 @@ export function CodeBlock({
   );
 }
 
+function HighlightedCode({ code }: { code: string }) {
+  const lines = code.split("\n");
+  return (
+    <Text style={styles.editorText}>
+      {lines.map((line, index) => {
+        const tokens = line === "" ? [{ text: " " }] : highlightLine(line);
+        return (
+          <Text key={index}>
+            {tokens.map((token, tokenIndex) =>
+              token.kind ? (
+                <Text key={tokenIndex} style={{ color: TOKEN_COLOR[token.kind] }}>
+                  {token.text}
+                </Text>
+              ) : (
+                token.text
+              ),
+            )}
+            {index < lines.length - 1 ? "\n" : ""}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
+export function CodeEditor({
+  value,
+  selection,
+  onSelectionChange,
+  onChangeText,
+}: {
+  value: string;
+  selection?: { start: number; end: number };
+  onSelectionChange: (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => void;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <View style={styles.editorBox}>
+      <View pointerEvents="none" style={styles.editorOverlay}>
+        <HighlightedCode code={value.length === 0 ? " " : value} />
+      </View>
+      <TextInput
+        value={value}
+        selection={selection}
+        onSelectionChange={onSelectionChange}
+        onChangeText={onChangeText}
+        multiline
+        spellCheck={false}
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="off"
+        maxLength={20000}
+        cursorColor={colors.ink}
+        selectionColor="rgba(198, 242, 78, 0.35)"
+        style={styles.editorInput}
+      />
+    </View>
+  );
+}
+
 export function CodeSnippet({ code }: { code: string }) {
   const { codePrefs } = useStudy();
   return (
@@ -231,4 +291,30 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   close: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  editorBox: {
+    minHeight: 224,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+  },
+  editorOverlay: { position: "absolute", left: 0, right: 0, top: 0 },
+  editorText: {
+    padding: 12,
+    color: colors.ink,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    lineHeight: 20,
+    includeFontPadding: false,
+  },
+  editorInput: {
+    minHeight: 224,
+    padding: 12,
+    color: "transparent",
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlignVertical: "top",
+    includeFontPadding: false,
+  },
 });

@@ -19,6 +19,8 @@ type StudyValue = {
   saveDraft: (taskId: string, value: string) => void;
   snippetsOn: boolean;
   setSnippetsOn: (on: boolean) => void;
+  openAll: boolean;
+  setOpenAll: (on: boolean) => void;
   codePrefs: CodePrefs;
   setCodePrefs: (next: CodePrefs) => void;
 };
@@ -50,6 +52,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [note, setNote] = useState("Задачи из сборки");
   const [snippetsOn, setSnippetsOnState] = useState(true);
+  const [openAll, setOpenAllState] = useState(true);
   const [codePrefs, setCodePrefsState] = useState<CodePrefs>({ wrap: true, size: 12 });
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         const localProgress = await readProgress();
         const storedDrafts = await readDrafts();
         const snippets = await readMeta("etalon-snippets");
+        const themes = await readMeta("etalon-open-themes");
         const prefs = parsePrefs(await readMeta("etalon-code-view"));
         if (cancelled) return;
         const nextCards = stored.length > 0 ? stored : bundled.cards;
@@ -69,6 +73,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         setProgress(asMap(localProgress));
         setDrafts(storedDrafts);
         setSnippetsOnState(snippets !== "off");
+        setOpenAllState(themes !== "off");
         setCodePrefsState(prefs);
       } finally {
         if (!cancelled) setReady(true);
@@ -119,6 +124,11 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     void writeMeta("etalon-snippets", on ? "on" : "off");
   }, []);
 
+  const setOpenAll = useCallback((on: boolean) => {
+    setOpenAllState(on);
+    void writeMeta("etalon-open-themes", on ? "on" : "off");
+  }, []);
+
   const setCodePrefs = useCallback((next: CodePrefs) => {
     setCodePrefsState(next);
     void writeMeta("etalon-code-view", JSON.stringify(next));
@@ -139,10 +149,12 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       },
       snippetsOn,
       setSnippetsOn,
+      openAll,
+      setOpenAll,
       codePrefs,
       setCodePrefs,
     }),
-    [cards, codePrefs, drafts, note, offline, progress, rate, ready, setCodePrefs, setSnippetsOn, snippetsOn],
+    [cards, codePrefs, drafts, note, offline, openAll, progress, rate, ready, setCodePrefs, setOpenAll, setSnippetsOn, snippetsOn],
   );
 
   return <StudyContext.Provider value={value}>{children}</StudyContext.Provider>;

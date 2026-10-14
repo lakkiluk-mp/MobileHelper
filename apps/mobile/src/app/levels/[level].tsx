@@ -12,7 +12,8 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function Mark({ state }: { state: PathState }) {
+function Mark({ state, open }: { state: PathState; open: boolean }) {
+  if (state === "locked" && open) return null;
   if (state === "knew") return <Check size={18} color={colors.mark} />;
   if (state === "unsure")
     return (
@@ -40,7 +41,7 @@ export default function LevelPage() {
   const raw = Array.isArray(params.level) ? params.level[0] : params.level;
   const level = Number(raw);
   const meta = LEVELS.find((item) => item.level === level);
-  const { cards, progress, ready } = useStudy();
+  const { cards, progress, ready, openAll } = useStudy();
   const steps = pathOf(cards, progress).filter((step) => step.card.level === level);
   const done = steps.filter((step) => step.state !== "current" && step.state !== "locked").length;
   const [theoryOpen, setTheoryOpen] = useState(true);
@@ -114,7 +115,7 @@ export default function LevelPage() {
         </View>
         <View style={styles.list}>
           {steps.map((step) => {
-            const locked = ready && step.state === "locked";
+            const locked = ready && step.state === "locked" && !openAll;
             const current = step.state === "current";
             const passed = !current && step.state !== "locked";
             const body = (
@@ -122,7 +123,7 @@ export default function LevelPage() {
                 <T
                   mono
                   size={12}
-                  color={current ? colors.mark : passed ? colors.muted : colors.faint}
+                  color={current ? colors.mark : passed ? colors.muted : locked ? colors.faint : colors.ink}
                   style={styles.id}
                 >
                   {step.card.id}
@@ -130,12 +131,12 @@ export default function LevelPage() {
                 <T
                   size={15}
                   weight={current ? "semibold" : "regular"}
-                  color={current || passed ? colors.ink : colors.faint}
+                  color={locked ? colors.faint : colors.ink}
                   style={styles.flex}
                 >
                   {step.card.title}
                 </T>
-                <Mark state={step.state} />
+                <Mark state={step.state} open={openAll} />
               </>
             );
             const rail = [

@@ -76,20 +76,26 @@ function StepMark({ state }: { state: PathState }) {
   return null;
 }
 
-function TimelineRow({ step }: { step: PathStep }) {
+function TimelineRow({ step, open }: { step: PathStep; open: boolean }) {
   const { state, card } = step;
   const current = state === "current";
   const done = passed(state);
+  const closed = state === "locked" && !open;
   const body = (
     <>
       {current ? <View style={styles.now} /> : null}
-      <T mono size={12} color={current ? colors.mark : done ? colors.muted : colors.faint} style={styles.id}>
+      <T
+        mono
+        size={12}
+        color={current ? colors.mark : done ? colors.muted : closed ? colors.faint : colors.ink}
+        style={styles.id}
+      >
         {card.id}
       </T>
       <T
         size={15}
         weight={current ? "semibold" : "regular"}
-        color={current ? colors.ink : done ? colors.muted : colors.faint}
+        color={current ? colors.ink : done ? colors.muted : closed ? colors.faint : colors.ink}
         style={styles.flex}
       >
         {card.title}
@@ -104,7 +110,7 @@ function TimelineRow({ step }: { step: PathStep }) {
     minHeight: current ? 56 : 48,
     paddingLeft: current ? 14 : 16,
   };
-  if (state === "locked") {
+  if (closed) {
     return <View style={[styles.step, rail]}>{body}</View>;
   }
   return (
@@ -114,15 +120,25 @@ function TimelineRow({ step }: { step: PathStep }) {
   );
 }
 
-function CurrentLevel({ level, steps }: { level: number; steps: PathStep[] }) {
+function CurrentLevel({
+  level,
+  steps,
+  full,
+  open,
+}: {
+  level: number;
+  steps: PathStep[];
+  full: boolean;
+  open: boolean;
+}) {
   const meta = LEVELS.find((item) => item.level === level);
   const done = steps.filter((step) => passed(step.state)).length;
   const at = steps.findIndex((step) => step.state === "current");
   const anchor = at === -1 ? steps.length - 1 : at;
   const from = Math.max(0, anchor - BEFORE_CURRENT);
   const to = Math.min(steps.length, anchor + AFTER_CURRENT + 1);
-  const shown = steps.slice(from, to);
-  const rest = steps.length - to;
+  const shown = full ? steps : steps.slice(from, to);
+  const rest = full ? 0 : steps.length - to;
   return (
     <View style={styles.section}>
       <Pressable onPress={() => router.push(`/levels/${level}`)} style={styles.levelHead}>
@@ -146,7 +162,7 @@ function CurrentLevel({ level, steps }: { level: number; steps: PathStep[] }) {
       </Pressable>
       <View style={styles.timeline}>
         {shown.map((step) => (
-          <TimelineRow key={step.card.id} step={step} />
+          <TimelineRow key={step.card.id} step={step} open={open} />
         ))}
         {rest > 0 ? (
           <Pressable onPress={() => router.push(`/levels/${level}`)} style={styles.more}>
@@ -192,16 +208,41 @@ function LevelRow({ level, steps }: { level: number; steps: PathStep[] }) {
 }
 
 export function PathView() {
-  const { cards, progress } = useStudy();
+  const { cards, progress, openAll } = useStudy();
   const steps = pathOf(cards, progress);
   const current = steps.find((step) => step.state === "current");
+  if (openAll) {
+    return (
+      <View>
+        <ContinueCard step={current} />
+        {LEVELS.map((level) => {
+          const section = steps.filter((step) => step.card.level === level.level);
+          if (section.length === 0) return null;
+          return (
+            <CurrentLevel
+              key={level.level}
+              level={level.level}
+              steps={section}
+              full
+              open
+            />
+          );
+        })}
+      </View>
+    );
+  }
   const focusLevel = current?.card.level ?? steps.at(-1)?.card.level;
   const others = LEVELS.filter((level) => level.level !== focusLevel);
   return (
     <View>
       <ContinueCard step={current} />
       {focusLevel !== undefined ? (
-        <CurrentLevel level={focusLevel} steps={steps.filter((step) => step.card.level === focusLevel)} />
+        <CurrentLevel
+          level={focusLevel}
+          steps={steps.filter((step) => step.card.level === focusLevel)}
+          full={false}
+          open={false}
+        />
       ) : null}
       {others.length > 0 ? (
         <View style={styles.others}>
