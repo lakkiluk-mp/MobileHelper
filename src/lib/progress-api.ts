@@ -3,19 +3,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { progressStatusSchema } from "@etalon/shared";
 import { z } from "zod";
 
-const itemSchema = z.object({
+export const progressItemSchema = z.object({
   taskId: z.string().min(1).max(40),
   status: progressStatusSchema,
   updatedAt: z.string().min(1).max(40),
   draft: z.string().max(20000).optional(),
 });
 
-const batchSchema = z.object({
-  items: z.array(itemSchema).max(100),
+export const progressBatchSchema = z.object({
+  items: z.array(progressItemSchema).max(100),
 });
 
 export const pushDeviceProgress = createServerFn({ method: "POST" })
-  .validator(batchSchema.extend({ deviceId: z.string().uuid() }))
+  .validator(progressBatchSchema.extend({ deviceId: z.string().uuid() }))
   .handler(async ({ data }) => {
     const { saveDeviceProgress } = await import("./progress.server");
     await saveDeviceProgress(data.deviceId, data.items);
@@ -24,7 +24,7 @@ export const pushDeviceProgress = createServerFn({ method: "POST" })
 
 export const pushUserProgress = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator(batchSchema)
+  .validator(progressBatchSchema)
   .handler(async ({ data, context }) => {
     const { saveUserProgress } = await import("./progress.server");
     await saveUserProgress(context.userId, data.items);

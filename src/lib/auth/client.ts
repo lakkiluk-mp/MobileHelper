@@ -143,6 +143,19 @@ export async function signIn(
     return;
   }
 
+  const provider = GROK_PROVIDERS.find((item) => item.providerId === providerId);
+  if (provider) {
+    const social = await authClient.signIn.social({
+      provider: provider.idp,
+      callbackURL,
+      errorCallbackURL,
+    });
+    if (!social.error) {
+      if (social.data?.url) window.location.href = social.data.url;
+      return;
+    }
+  }
+
   const { data, error } = await authClient.signIn.oauth2({
     providerId,
     callbackURL,

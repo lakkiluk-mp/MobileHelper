@@ -82,8 +82,12 @@ const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? PREVIEW_CLIENT_ID;
 const grokClientSecret = env("GROK_AUTH_CLIENT_SECRET") ?? PREVIEW_CLIENT_SECRET;
 
 /** True when federated sign-in is active (real auth is enforced). */
+const googleClientId = env("GOOGLE_CLIENT_ID");
+const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
+const googleDirect = Boolean(googleClientId && googleClientSecret);
+
 export const authConfigured =
-  !authDisabled && Boolean(grokClientId && grokClientSecret);
+  !authDisabled && (googleDirect || Boolean(grokClientId && grokClientSecret));
 
 // This app's own Better Auth origin. When deployed the deployer injects the
 // public URL. In the sandbox live preview there's no fixed URL (each preview gets
@@ -150,7 +154,7 @@ export const SESSION_TOKEN_COOKIE = "__Host-grok-auth.session_token";
 
 // Built separately so the `betterAuth({...})` call stays easy to edit without
 // breaking brackets (models often trip on the conditional plugin spread).
-const grokOAuthPlugin = authConfigured
+const grokOAuthPlugin = authConfigured && !googleDirect
   ? genericOAuth({
       config: GROK_PROVIDERS.map(({ providerId, idp }) => ({
         providerId,
@@ -196,6 +200,7 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: [
         ...GROK_PROVIDERS.map((p) => p.providerId),
+        "google",
         GATE_PROVIDER_ID,
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
@@ -212,6 +217,18 @@ export const auth = betterAuth({
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
+
+  ...(authConfigured && googleDirect
+    ? {
+        socialProviders: {
+          google: {
+            clientId: googleClientId as string,
+            clientSecret: googleClientSecret as string,
+            prompt: "select_account" as const,
+          },
+        },
+      }
+    : {}),
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that
   // carries a `Domain` attribute, so a sibling `*.grok.me` app cannot "toss" a

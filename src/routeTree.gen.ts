@@ -15,9 +15,13 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiProgressRouteImport } from './routes/api/progress'
+import { Route as DownloadApkRouteImport } from './routes/download/apk'
 import { Route as LevelsLevelRouteImport } from './routes/levels/$level'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiProgressClaimRouteImport } from './routes/api/progress/claim'
+import { Route as ApiProgressDeviceRouteImport } from './routes/api/progress/device'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,6 +53,16 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProgressRoute = ApiProgressRouteImport.update({
+  id: '/api/progress',
+  path: '/api/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadApkRoute = DownloadApkRouteImport.update({
+  id: '/download/apk',
+  path: '/download/apk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LevelsLevelRoute = LevelsLevelRouteImport.update({
   id: '/levels/$level',
   path: '/levels/$level',
@@ -64,6 +78,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProgressClaimRoute = ApiProgressClaimRouteImport.update({
+  id: '/claim',
+  path: '/claim',
+  getParentRoute: () => ApiProgressRoute,
+} as any)
+const ApiProgressDeviceRoute = ApiProgressDeviceRouteImport.update({
+  id: '/device',
+  path: '/device',
+  getParentRoute: () => ApiProgressRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,9 +96,13 @@ export interface FileRoutesByFullPath {
   '/progress': typeof ProgressRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
+  '/download/apk': typeof DownloadApkRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/progress/claim': typeof ApiProgressClaimRoute
+  '/api/progress/device': typeof ApiProgressDeviceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,9 +111,13 @@ export interface FileRoutesByTo {
   '/progress': typeof ProgressRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
+  '/download/apk': typeof DownloadApkRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/progress/claim': typeof ApiProgressClaimRoute
+  '/api/progress/device': typeof ApiProgressDeviceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,9 +127,13 @@ export interface FileRoutesById {
   '/progress': typeof ProgressRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/api/progress': typeof ApiProgressRouteWithChildren
+  '/download/apk': typeof DownloadApkRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/progress/claim': typeof ApiProgressClaimRoute
+  '/api/progress/device': typeof ApiProgressDeviceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,9 +144,13 @@ export interface FileRouteTypes {
     | '/progress'
     | '/review'
     | '/settings'
+    | '/api/progress'
+    | '/download/apk'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/progress/claim'
+    | '/api/progress/device'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -119,9 +159,13 @@ export interface FileRouteTypes {
     | '/progress'
     | '/review'
     | '/settings'
+    | '/api/progress'
+    | '/download/apk'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/progress/claim'
+    | '/api/progress/device'
   id:
     | '__root__'
     | '/'
@@ -130,9 +174,13 @@ export interface FileRouteTypes {
     | '/progress'
     | '/review'
     | '/settings'
+    | '/api/progress'
+    | '/download/apk'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/progress/claim'
+    | '/api/progress/device'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -142,6 +190,8 @@ export interface RootRouteChildren {
   ProgressRoute: typeof ProgressRoute
   ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
+  ApiProgressRoute: typeof ApiProgressRouteWithChildren
+  DownloadApkRoute: typeof DownloadApkRoute
   LevelsLevelRoute: typeof LevelsLevelRoute
   TasksTaskIdRoute: typeof TasksTaskIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -191,6 +241,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/progress': {
+      id: '/api/progress'
+      path: '/api/progress'
+      fullPath: '/api/progress'
+      preLoaderRoute: typeof ApiProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download/apk': {
+      id: '/download/apk'
+      path: '/download/apk'
+      fullPath: '/download/apk'
+      preLoaderRoute: typeof DownloadApkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/levels/$level': {
       id: '/levels/$level'
       path: '/levels/$level'
@@ -212,8 +276,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/progress/claim': {
+      id: '/api/progress/claim'
+      path: '/claim'
+      fullPath: '/api/progress/claim'
+      preLoaderRoute: typeof ApiProgressClaimRouteImport
+      parentRoute: typeof ApiProgressRoute
+    }
+    '/api/progress/device': {
+      id: '/api/progress/device'
+      path: '/device'
+      fullPath: '/api/progress/device'
+      preLoaderRoute: typeof ApiProgressDeviceRouteImport
+      parentRoute: typeof ApiProgressRoute
+    }
   }
 }
+
+interface ApiProgressRouteChildren {
+  ApiProgressClaimRoute: typeof ApiProgressClaimRoute
+  ApiProgressDeviceRoute: typeof ApiProgressDeviceRoute
+}
+
+const ApiProgressRouteChildren: ApiProgressRouteChildren = {
+  ApiProgressClaimRoute: ApiProgressClaimRoute,
+  ApiProgressDeviceRoute: ApiProgressDeviceRoute,
+}
+
+const ApiProgressRouteWithChildren = ApiProgressRoute._addFileChildren(
+  ApiProgressRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -222,6 +314,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProgressRoute: ProgressRoute,
   ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
+  ApiProgressRoute: ApiProgressRouteWithChildren,
+  DownloadApkRoute: DownloadApkRoute,
   LevelsLevelRoute: LevelsLevelRoute,
   TasksTaskIdRoute: TasksTaskIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
