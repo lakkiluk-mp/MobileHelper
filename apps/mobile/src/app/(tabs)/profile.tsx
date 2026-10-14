@@ -1,5 +1,6 @@
 import { Screen, SyncNote, TopBar, useTabBarInset } from "@/components/shell";
 import { T } from "@/components/text";
+import { useStudy } from "@/lib/study";
 import { colors } from "@/theme";
 import { router } from "expo-router";
 import { ArrowLeftRight, ChevronRight } from "lucide-react-native";
@@ -7,6 +8,8 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 export default function Profile() {
   const bottom = useTabBarInset();
+  const { account } = useStudy();
+  const title = account ? account.name || account.email : "Гость";
   return (
     <Screen header={<TopBar title="Профиль" />}>
       <ScrollView
@@ -16,20 +19,20 @@ export default function Profile() {
         <View style={styles.guest}>
           <View style={styles.avatar}>
             <T size={18} weight="bold" color={colors.paper}>
-              Г
+              {title.slice(0, 1).toUpperCase()}
             </T>
           </View>
           <View style={styles.flex}>
-            <T weight="semibold">Гость</T>
+            <T weight="semibold">{title}</T>
             <T size={14} color={colors.muted}>
-              Прогресс хранится на этом устройстве
+              {account ? account.email : "Прогресс хранится на этом устройстве"}
             </T>
           </View>
         </View>
         <Pressable onPress={() => router.push("/login")} style={styles.login}>
           <ArrowLeftRight size={22} color={colors.violet} />
           <T size={14} style={styles.flex}>
-            Войти, чтобы прогресс был на всех устройствах
+            {account ? "Аккаунт и выход" : "Войти, чтобы прогресс был на всех устройствах"}
           </T>
           <ChevronRight size={20} color={colors.violet} />
         </Pressable>

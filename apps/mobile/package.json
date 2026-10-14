@@ -13,8 +13,10 @@
     "expo-linking": "~57.0.12",
     "expo-network": "~57.0.2",
     "expo-router": "~57.0.25",
+    "expo-secure-store": "~57.0.4",
     "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
+    "expo-web-browser": "~57.0.3",
     "lucide-react-native": "^1.55.0",
     "react": "19.2.3",
     "react-native": "0.86.3",
@@ -34,7 +36,8 @@
     "ios": "sh scripts/clear-metro.sh && expo run:ios",
     "build:apk": "sh scripts/build-apk.sh",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "release:apk": "sh scripts/release-apk.sh"
   },
   "private": true
 }

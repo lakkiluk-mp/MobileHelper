@@ -150,3 +150,44 @@ export async function readDrafts(): Promise<Record<string, string>> {
 export async function writeDraft(taskId: string, value: string): Promise<void> {
   await writeMeta(`draft:${taskId}`, value);
 }
+
+export type OutboxEntry = { row: ProgressRow; json: string };
+
+export async function readOutbox(): Promise<OutboxEntry[]> {
+  const db = await database();
+  const rows = await db.getAllAsync<{ json: string }>("SELECT json FROM outbox");
+  return rows.flatMap((item) => {
+    try {
+      return [{ row: JSON.parse(item.json) as ProgressRow, json: item.json }];
+    } catch {
+      return [];
+    }
+  });
+}
+
+export async function dropOutbox(entries: OutboxEntry[]): Promise<void> {
+  const db = await database();
+  await db.withTransactionAsync(async () => {
+    for (const entry of entries) {
+      await db.runAsync("DELETE FROM outbox WHERE task_id = ? AND json = ?", entry.row.taskId, entry.json);
+    }
+  });
+}
+
+export async function mergeRemoteProgress(rows: ProgressRow[]): Promise<void> {
+  const db = await database();
+  await db.withTransactionAsync(async () => {
+    for (const row of rows) {
+      if (!STATUSES.has(row.status)) continue;
+      await db.runAsync(
+        `INSERT INTO progress (task_id, status, updated_at, draft) VALUES (?, ?, ?, ?)
+         ON CONFLICT(task_id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at, draft = excluded.draft
+         WHERE progress.updated_at < excluded.updated_at`,
+        row.taskId,
+        row.status,
+        row.updatedAt,
+        row.draft ?? null,
+      );
+    }
+  });
+}

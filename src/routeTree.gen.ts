@@ -20,6 +20,8 @@ import { Route as DownloadApkRouteImport } from './routes/download/apk'
 import { Route as LevelsLevelRouteImport } from './routes/levels/$level'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiMobileDoneRouteImport } from './routes/api/mobile/done'
+import { Route as ApiMobileSignInRouteImport } from './routes/api/mobile/sign-in'
 import { Route as ApiProgressClaimRouteImport } from './routes/api/progress/claim'
 import { Route as ApiProgressDeviceRouteImport } from './routes/api/progress/device'
 
@@ -78,6 +80,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMobileDoneRoute = ApiMobileDoneRouteImport.update({
+  id: '/api/mobile/done',
+  path: '/api/mobile/done',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMobileSignInRoute = ApiMobileSignInRouteImport.update({
+  id: '/api/mobile/sign-in',
+  path: '/api/mobile/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProgressClaimRoute = ApiProgressClaimRouteImport.update({
   id: '/claim',
   path: '/claim',
@@ -101,6 +113,8 @@ export interface FileRoutesByFullPath {
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mobile/done': typeof ApiMobileDoneRoute
+  '/api/mobile/sign-in': typeof ApiMobileSignInRoute
   '/api/progress/claim': typeof ApiProgressClaimRoute
   '/api/progress/device': typeof ApiProgressDeviceRoute
 }
@@ -116,6 +130,8 @@ export interface FileRoutesByTo {
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mobile/done': typeof ApiMobileDoneRoute
+  '/api/mobile/sign-in': typeof ApiMobileSignInRoute
   '/api/progress/claim': typeof ApiProgressClaimRoute
   '/api/progress/device': typeof ApiProgressDeviceRoute
 }
@@ -132,6 +148,8 @@ export interface FileRoutesById {
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mobile/done': typeof ApiMobileDoneRoute
+  '/api/mobile/sign-in': typeof ApiMobileSignInRoute
   '/api/progress/claim': typeof ApiProgressClaimRoute
   '/api/progress/device': typeof ApiProgressDeviceRoute
 }
@@ -149,6 +167,8 @@ export interface FileRouteTypes {
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/mobile/done'
+    | '/api/mobile/sign-in'
     | '/api/progress/claim'
     | '/api/progress/device'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +184,8 @@ export interface FileRouteTypes {
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/mobile/done'
+    | '/api/mobile/sign-in'
     | '/api/progress/claim'
     | '/api/progress/device'
   id:
@@ -179,6 +201,8 @@ export interface FileRouteTypes {
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
+    | '/api/mobile/done'
+    | '/api/mobile/sign-in'
     | '/api/progress/claim'
     | '/api/progress/device'
   fileRoutesById: FileRoutesById
@@ -195,6 +219,8 @@ export interface RootRouteChildren {
   LevelsLevelRoute: typeof LevelsLevelRoute
   TasksTaskIdRoute: typeof TasksTaskIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiMobileDoneRoute: typeof ApiMobileDoneRoute
+  ApiMobileSignInRoute: typeof ApiMobileSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -276,6 +302,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mobile/done': {
+      id: '/api/mobile/done'
+      path: '/api/mobile/done'
+      fullPath: '/api/mobile/done'
+      preLoaderRoute: typeof ApiMobileDoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mobile/sign-in': {
+      id: '/api/mobile/sign-in'
+      path: '/api/mobile/sign-in'
+      fullPath: '/api/mobile/sign-in'
+      preLoaderRoute: typeof ApiMobileSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/progress/claim': {
       id: '/api/progress/claim'
       path: '/claim'
@@ -319,6 +359,8 @@ const rootRouteChildren: RootRouteChildren = {
   LevelsLevelRoute: LevelsLevelRoute,
   TasksTaskIdRoute: TasksTaskIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiMobileDoneRoute: ApiMobileDoneRoute,
+  ApiMobileSignInRoute: ApiMobileSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

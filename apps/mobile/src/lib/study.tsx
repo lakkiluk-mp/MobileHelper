@@ -3,6 +3,7 @@ import type { Card, ProgressStatus } from "@etalon/shared";
 import { useNetworkState } from "expo-network";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { readCards, readDrafts, readMeta, readProgress, writeCards, writeDraft, writeMeta, writeProgress, type ProgressRow } from "./db";
+import { currentAccount, signIn as startSignIn, signOut as endSession, syncProgress, type Account } from "./sync";
 
 const CODE_SIZES = [11, 12, 13, 14, 15] as const;
 
@@ -23,6 +24,9 @@ type StudyValue = {
   setOpenAll: (on: boolean) => void;
   codePrefs: CodePrefs;
   setCodePrefs: (next: CodePrefs) => void;
+  account: Account | null;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const StudyContext = createContext<StudyValue | null>(null);
@@ -54,6 +58,16 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const [snippetsOn, setSnippetsOnState] = useState(true);
   const [openAll, setOpenAllState] = useState(true);
   const [codePrefs, setCodePrefsState] = useState<CodePrefs>({ wrap: true, size: 12 });
+  const [account, setAccount] = useState<Account | null>(null);
+
+  const sync = useCallback(async () => {
+    try {
+      await syncProgress();
+      setProgress(asMap(await readProgress()));
+    } catch {
+      setNote("Синхронизация не удалась — повторим позже");
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +107,21 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     );
   }, [offline, ready]);
 
+  useEffect(() => {
+    if (!ready || offline) return;
+    let cancelled = false;
+    void (async () => {
+      const next = await currentAccount().catch(() => null);
+      if (cancelled) return;
+      setAccount(next);
+      await sync();
+      if (!cancelled && next) setNote("Прогресс сохранён в аккаунте");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [offline, ready, sync]);
+
   const rate = useCallback(
     (taskId: string, status: ProgressStatus) => {
       const saved = drafts[taskId];
@@ -108,16 +137,37 @@ export function StudyProvider({ children }: { children: ReactNode }) {
           setNote(
             offline
               ? "Сети нет — оценка сохранится на устройстве и уйдёт позже"
-              : "Оценка на этом телефоне",
+              : account
+                ? "Оценка сохранена в аккаунте"
+                : "Оценка на этом телефоне",
           );
+          if (!offline) void sync();
         },
         () => {
           setNote("Оценку не удалось записать");
         },
       );
     },
-    [drafts, offline],
+    [account, drafts, offline, sync],
   );
+
+  const signIn = useCallback(async () => {
+    try {
+      const next = await startSignIn();
+      if (!next) return;
+      setAccount(next);
+      setProgress(asMap(await readProgress()));
+      setNote("Прогресс сохранён в аккаунте");
+    } catch {
+      setNote("Войти не удалось — проверьте сеть");
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await endSession();
+    setAccount(null);
+    setNote("Вы вышли. Оценки остаются на этом телефоне");
+  }, []);
 
   const setSnippetsOn = useCallback((on: boolean) => {
     setSnippetsOnState(on);
@@ -153,8 +203,11 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       setOpenAll,
       codePrefs,
       setCodePrefs,
+      account,
+      signIn,
+      signOut,
     }),
-    [cards, codePrefs, drafts, note, offline, openAll, progress, rate, ready, setCodePrefs, setOpenAll, setSnippetsOn, snippetsOn],
+    [account, cards, codePrefs, drafts, note, offline, openAll, progress, rate, ready, setCodePrefs, setOpenAll, setSnippetsOn, signIn, signOut, snippetsOn],
   );
 
   return <StudyContext.Provider value={value}>{children}</StudyContext.Provider>;
