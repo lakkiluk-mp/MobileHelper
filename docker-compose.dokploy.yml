@@ -3,10 +3,10 @@ services:
     build: .
     restart: unless-stopped
     depends_on:
-      db:
+      etalon-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://etalon:${POSTGRES_PASSWORD}@db:5432/etalon
+      DATABASE_URL: postgres://etalon:${POSTGRES_PASSWORD}@etalon-db:5432/etalon
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -17,8 +17,11 @@ services:
       - apk_builds:/data/apk
     expose:
       - "3000"
+    networks:
+      - etalon-internal
+      - dokploy-network
 
-  db:
+  etalon-db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -32,7 +35,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - etalon-internal
 
 volumes:
   apk_builds:
   pg_data:
+
+networks:
+  etalon-internal:
+    driver: bridge
+  dokploy-network:
+    external: true
