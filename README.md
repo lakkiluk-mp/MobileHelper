@@ -26,4 +26,4 @@ cd apps/mobile
 npm run release:apk
 ```
 
-Скрипт собирает APK, копирует его на сервер и заменяет файл в контейнере. Актуальная сборка всегда по ссылке `https://etalon.offerist-ai.ru/download/apk`. Нужен SSH до `polotno-stage` (другой хост — `RELEASE_SSH_HOST`).
+Скрипт собирает APK, копирует его на сервер и заменяет файл в контейнере, рядом кладёт `etalon.json` с версией — по нему `/download/version` отвечает приложению, и оно предлагает обновиться, если `version` выше установленной. Актуальная сборка всегда по ссылке `https://etalon.offerist-ai.ru/download/apk`. Нужен SSH до `polotno-stage` (другой хост — `RELEASE_SSH_HOST`).

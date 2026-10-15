@@ -1,5 +1,7 @@
 import { T } from "@/components/text";
 import { useStudy } from "@/lib/study";
+import { currentVersion } from "@/lib/update";
+import { useUpdate } from "@/lib/use-update";
 import { snippetCatalog } from "@etalon/web-snippets";
 import { colors } from "@/theme";
 import { router } from "expo-router";
@@ -12,6 +14,7 @@ export default function Settings() {
   const immediate = catalog.filter((item) => item.mode === "immediate");
   const boundary = catalog.filter((item) => item.mode === "boundary");
   const insets = useSafeAreaInsets();
+  const update = useUpdate(false);
   return (
     <View style={[styles.page, { paddingTop: Math.max(insets.top, 32) }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -72,6 +75,31 @@ export default function Settings() {
         </T>
         <SnippetGroup title="Сразу" items={immediate} />
         <SnippetGroup title="После пробела, скобки или новой строки" items={boundary} />
+        <T size={24} style={styles.section}>
+          Приложение
+        </T>
+        <T size={14} color={colors.muted} style={styles.copy}>
+          Версия {currentVersion}
+          {update.checked && !update.available ? " — последняя" : ""}
+        </T>
+        {update.error ? (
+          <T size={14} color={colors.bad} style={styles.copy}>
+            {update.error}
+          </T>
+        ) : null}
+        {update.available ? (
+          <Pressable disabled={update.progress !== null} onPress={update.install} style={styles.on}>
+            <T size={14} color={colors.paper}>
+              {update.progress !== null
+                ? `Загрузка ${Math.round(update.progress * 100)}%`
+                : `Обновить до ${update.available}`}
+            </T>
+          </Pressable>
+        ) : (
+          <Pressable disabled={update.checking} onPress={update.check} style={styles.off}>
+            <T size={14}>{update.checking ? "Проверяю…" : "Проверить обновления"}</T>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );

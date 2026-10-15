@@ -1,3 +1,4 @@
+import { UpdateBanner } from "@/components/update-banner";
 import { RunnerHost } from "@/lib/runner";
 import { StudyProvider } from "@/lib/study";
 import { colors, fonts } from "@/theme";
@@ -42,6 +43,7 @@ export default function RootLayout() {
         <View pointerEvents="none" style={styles.hostSlot}>
           <RunnerHost />
         </View>
+        <UpdateBanner />
       </View>
     </StudyProvider>
   );

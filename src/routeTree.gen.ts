@@ -17,6 +17,7 @@ import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiProgressRouteImport } from './routes/api/progress'
 import { Route as DownloadApkRouteImport } from './routes/download/apk'
+import { Route as DownloadVersionRouteImport } from './routes/download/version'
 import { Route as LevelsLevelRouteImport } from './routes/levels/$level'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -65,6 +66,11 @@ const DownloadApkRoute = DownloadApkRouteImport.update({
   path: '/download/apk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DownloadVersionRoute = DownloadVersionRouteImport.update({
+  id: '/download/version',
+  path: '/download/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LevelsLevelRoute = LevelsLevelRouteImport.update({
   id: '/levels/$level',
   path: '/levels/$level',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/api/progress': typeof ApiProgressRouteWithChildren
   '/download/apk': typeof DownloadApkRoute
+  '/download/version': typeof DownloadVersionRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/api/progress': typeof ApiProgressRouteWithChildren
   '/download/apk': typeof DownloadApkRoute
+  '/download/version': typeof DownloadVersionRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/api/progress': typeof ApiProgressRouteWithChildren
   '/download/apk': typeof DownloadApkRoute
+  '/download/version': typeof DownloadVersionRoute
   '/levels/$level': typeof LevelsLevelRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/progress'
     | '/download/apk'
+    | '/download/version'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/progress'
     | '/download/apk'
+    | '/download/version'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/progress'
     | '/download/apk'
+    | '/download/version'
     | '/levels/$level'
     | '/tasks/$taskId'
     | '/api/auth/$'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ApiProgressRoute: typeof ApiProgressRouteWithChildren
   DownloadApkRoute: typeof DownloadApkRoute
+  DownloadVersionRoute: typeof DownloadVersionRoute
   LevelsLevelRoute: typeof LevelsLevelRoute
   TasksTaskIdRoute: typeof TasksTaskIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/download/apk'
       fullPath: '/download/apk'
       preLoaderRoute: typeof DownloadApkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download/version': {
+      id: '/download/version'
+      path: '/download/version'
+      fullPath: '/download/version'
+      preLoaderRoute: typeof DownloadVersionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/levels/$level': {
@@ -356,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ApiProgressRoute: ApiProgressRouteWithChildren,
   DownloadApkRoute: DownloadApkRoute,
+  DownloadVersionRoute: DownloadVersionRoute,
   LevelsLevelRoute: LevelsLevelRoute,
   TasksTaskIdRoute: TasksTaskIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
