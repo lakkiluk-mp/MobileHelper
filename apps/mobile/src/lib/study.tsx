@@ -46,6 +46,12 @@ function parsePrefs(raw: string | null): CodePrefs {
   }
 }
 
+function sameCards(stored: Card[], bundled: Card[]): boolean {
+  if (stored.length !== bundled.length) return false;
+  const byId = new Map(stored.map((card) => [card.id, JSON.stringify(card)]));
+  return bundled.every((card) => byId.get(card.id) === JSON.stringify(card));
+}
+
 export function StudyProvider({ children }: { children: ReactNode }) {
   const bundled = useMemo(() => bundledCatalog(), []);
   const network = useNetworkState();
@@ -80,10 +86,9 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         const themes = await readMeta("etalon-open-themes");
         const prefs = parsePrefs(await readMeta("etalon-code-view"));
         if (cancelled) return;
-        const nextCards = stored.length > 0 ? stored : bundled.cards;
-        if (stored.length === 0) await writeCards(bundled.cards);
+        if (!sameCards(stored, bundled.cards)) await writeCards(bundled.cards);
         if (cancelled) return;
-        setCards(nextCards);
+        setCards(bundled.cards);
         setProgress(asMap(localProgress));
         setDrafts(storedDrafts);
         setSnippetsOnState(snippets !== "off");
