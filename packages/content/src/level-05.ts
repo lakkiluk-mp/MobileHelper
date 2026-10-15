@@ -192,33 +192,16 @@ export const CARDS = [
       "promises"
     ],
     strict: false,
-    code: "Promise.resolve(1)\n  .then(x => { throw x + 1; })\n  .then(x => console.log('then', x))\n  .catch(e => { console.log('catch', e); return e * 10; })\n  .finally(() => console.log('finally'))\n  .then(x => console.log('end', x));\n",
+    code: "Promise.resolve(1)\n  .then(x => { throw x + 1; })\n  .then(x => console.log(x))\n  .catch(e => { console.log(e); return e * 10; })\n  .finally(() => console.log('finally'))\n  .then(x => console.log(x));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"catch\"",
-          "2"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"finally\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"end\"",
-          "20"
-        ]
-      }
+      { type: "log", args: ["2"] },
+      { type: "log", args: ["\"finally\""] },
+      { type: "log", args: ["20"] },
     ],
-    answer: "catch 2, finally, end 20",
+    answer: "2, finally, 20",
     theory: "`throw` внутри `then` отклоняет цепочку, следующий `then` пропускается. `catch` печатает `2` и возвращает `20`, дальше цепочка снова успешна. `finally` выполняется перед следующим `then` и не подменяет значение. Последний `then` получает `20`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.6",
@@ -231,47 +214,18 @@ export const CARDS = [
       "microtasks"
     ],
     strict: false,
-    code: "const p = Promise.resolve('v');\np.then(x => console.log('A', x));\np.then(x => console.log('B', x));\np.then(x => { console.log('C', x); return x; }).then(x => console.log('D', x));\nconsole.log('sync');\n",
+    code: "const p = Promise.resolve('v');\np.then(() => console.log('A'));\np.then(() => console.log('B'));\np.then(x => { console.log('C'); return x; }).then(() => console.log('D'));\nconsole.log('sync');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"sync\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"A\"",
-          "\"v\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"B\"",
-          "\"v\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"C\"",
-          "\"v\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"D\"",
-          "\"v\""
-        ]
-      }
+      { type: "log", args: ["\"sync\""] },
+      { type: "log", args: ["\"A\""] },
+      { type: "log", args: ["\"B\""] },
+      { type: "log", args: ["\"C\""] },
+      { type: "log", args: ["\"D\""] },
     ],
-    answer: "sync, A v, B v, C v, D v",
+    answer: "sync, A, B, C, D",
     theory: "`then` не заменяет обработчик, а добавляет ещё одну реакцию на тот же промис. Три реакции на `p` встают в очередь микротасков в порядке подписки, поэтому `A`, `B`, `C` идут подряд, а синхронный `sync` успевает напечататься раньше всех. `D` подписан не на `p`, а на промис, который вернул третий `then`: он попадает в очередь только после того, как отработает `C`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.7",
@@ -333,59 +287,18 @@ export const CARDS = [
       "microtasks"
     ],
     strict: false,
-    code: "const items = [1, 2];\nasync function withFor() {\n  for (const x of items) {\n    await null;\n    console.log('for', x);\n  }\n  console.log('for end');\n}\nasync function withForEach() {\n  items.forEach(async (x) => {\n    await null;\n    console.log('each', x);\n  });\n  console.log('each end');\n}\nwithFor();\nwithForEach();\nconsole.log('sync');\n",
+    code: "const items = [1];\nasync function withFor() {\n  for (const x of items) {\n    await null;\n    console.log('for');\n  }\n  console.log('for end');\n}\nasync function withForEach() {\n  items.forEach(async (x) => {\n    await null;\n    console.log('each');\n  });\n  console.log('each end');\n}\nwithFor();\nwithForEach();\nconsole.log('sync');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"each end\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"sync\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"for\"",
-          "1"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"each\"",
-          "1"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"each\"",
-          "2"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"for\"",
-          "2"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"for end\""
-        ]
-      }
+      { type: "log", args: ["\"each end\""] },
+      { type: "log", args: ["\"sync\""] },
+      { type: "log", args: ["\"for\""] },
+      { type: "log", args: ["\"for end\""] },
+      { type: "log", args: ["\"each\""] },
     ],
-    answer: "each end, sync, for 1, each 1, each 2, for 2, for end",
-    theory: "`for` с `await` — это цикл на одной функции: каждая итерация ждёт предыдущую, поэтому `for 1`, `for 2` и `for end` идут строго по порядку. `forEach` только вызывает колбэк и не смотрит, что тот вернул промис, — он не умеет ждать, поэтому `each end` печатается сразу, синхронно, ещё до первой итерации. Колбэки `forEach` при этом честно доигрывают в микротасках, вклиниваясь между итерациями `for`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "each end, sync, for, each, for end",
+    theory: "`for` с `await` ждёт каждую итерацию внутри одной функции, поэтому `for end` идёт только после `for`. `forEach` только вызывает колбэк и не смотрит, что тот вернул промис, — он не умеет ждать, поэтому `each end` печатается сразу, синхронно, ещё до первой итерации. Колбэк `forEach` при этом честно доигрывает в микротаске и вклинивается между `for` и `for end`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.9",
@@ -398,39 +311,16 @@ export const CARDS = [
       "promises"
     ],
     strict: false,
-    code: "async function noValue() {\n  console.log('body');\n}\nasync function main() {\n  const result = await noValue();\n  console.log('result', result);\n  console.log('typeof', typeof result);\n}\nmain();\nconsole.log('sync');\n",
+    code: "async function noValue() {\n  console.log('body');\n}\nasync function main() {\n  const result = await noValue();\n  console.log(result);\n}\nmain();\nconsole.log('sync');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"body\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"sync\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"result\"",
-          "undefined"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"typeof\"",
-          "\"undefined\""
-        ]
-      }
+      { type: "log", args: ["\"body\""] },
+      { type: "log", args: ["\"sync\""] },
+      { type: "log", args: ["undefined"] },
     ],
-    answer: "body, sync, result undefined, typeof — \"undefined\"",
-    theory: "`async`-функция всегда возвращает промис, даже если в теле нет `return`. Без `return` он выполняется со значением `undefined`, и `await` распаковывает именно его — это обычное значение, а не «ничего». Тело до первого `await` идёт синхронно (`body`), а продолжение после `await` — микротаск, поэтому `sync` печатается раньше `result`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "body, sync, undefined",
+    theory: "`async`-функция всегда возвращает промис, даже если в теле нет `return`. Без `return` он выполняется со значением `undefined`, и `await` распаковывает именно его — это обычное значение, а не «ничего». Тело до первого `await` идёт синхронно (`body`), а продолжение после `await` — микротаск, поэтому `sync` печатается раньше `undefined`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.10",
@@ -443,44 +333,17 @@ export const CARDS = [
       "promises"
     ],
     strict: false,
-    code: "async function boom() {\n  console.log('start');\n  throw new Error('bad');\n}\nconsole.log('before');\nconst p = boom();\nconsole.log('after');\np.catch(e => console.log('caught', e.message));\nconsole.log('end');\n",
+    code: "async function boom() {\n  console.log('start');\n  throw new Error('bad');\n}\nconsole.log('before');\nconst p = boom();\nconsole.log('after');\np.catch(e => console.log(e.message));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"before\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"start\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"after\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"end\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"caught\"",
-          "\"bad\""
-        ]
-      }
+      { type: "log", args: ["\"before\""] },
+      { type: "log", args: ["\"start\""] },
+      { type: "log", args: ["\"after\""] },
+      { type: "log", args: ["\"bad\""] },
     ],
-    answer: "before, start, after, end, caught bad",
-    theory: "`throw` внутри `async`-функции не вылетает в вызывающий код: движок ловит его и превращает в отклонение возвращённого промиса. Поэтому строка `const p = boom()` спокойно завершается, а ошибка становится видна только подписчику. `catch` — это реакция, значит `caught bad` придёт микротаском уже после синхронного `end`. Без `catch` тот же промис дал бы `unhandledrejection`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "before, start, after, bad",
+    theory: "`throw` внутри `async`-функции не вылетает в вызывающий код: движок ловит его и превращает в отклонение возвращённого промиса. Поэтому строка `const p = boom()` спокойно завершается, а ошибка становится видна только подписчику. `catch` — это реакция, значит `bad` придёт микротаском уже после синхронного `after`. Без `catch` тот же промис дал бы `unhandledrejection`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.11",
@@ -493,46 +356,18 @@ export const CARDS = [
       "timers"
     ],
     strict: false,
-    code: "const wait = (ms, v) =>\n  new Promise(res => setTimeout(() => { console.log('timer', v); res(v); }, ms));\nPromise.all([wait(0, 'a'), wait(10, 'b')]).then(values => console.log('all', values));\nsetTimeout(() => console.log('t0'), 0);\nconsole.log('sync');\n",
+    code: "const wait = (ms, v) =>\n  new Promise(res => setTimeout(() => { console.log(v); res(v); }, ms));\nPromise.all([wait(0, 'a'), wait(10, 'b')]).then(values => console.log(values));\nsetTimeout(() => console.log('t0'), 0);\nconsole.log('sync');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"sync\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"timer\"",
-          "\"a\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"t0\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"timer\"",
-          "\"b\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"all\"",
-          "[\"a\", \"b\"]"
-        ]
-      }
+      { type: "log", args: ["\"sync\""] },
+      { type: "log", args: ["\"a\""] },
+      { type: "log", args: ["\"t0\""] },
+      { type: "log", args: ["\"b\""] },
+      { type: "log", args: ["[\"a\", \"b\"]"] },
     ],
-    answer: "sync, timer a, t0, timer b, all [\"a\", \"b\"]",
-    theory: "`Promise.all` не ускоряет работу: он ждёт последний промис, а не первый. Два таймера с нулевой задержкой срабатывают в порядке постановки — сначала `timer a` (он поставлен первым), потом `t0`. Второй промис резолвится только через 10 мс, и лишь тогда `all` получает массив значений.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "sync, a, t0, b, [\"a\", \"b\"]",
+    theory: "`Promise.all` не ускоряет работу: он ждёт последний промис, а не первый. Два таймера с нулевой задержкой срабатывают в порядке постановки — сначала `a` (он поставлен первым), потом `t0`. Второй промис резолвится только через 10 мс, и лишь тогда `then` получает массив значений.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.12",
@@ -593,47 +428,17 @@ export const CARDS = [
       "promises"
     ],
     strict: false,
-    code: "Promise.resolve('a')\n  .then(v => { console.log('then1', v); throw new Error('x'); })\n  .then(v => console.log('then2', v))\n  .catch(e => { console.log('catch1', e.message); return 'b'; })\n  .then(v => { console.log('then3', v); throw new Error('y'); })\n  .catch(e => console.log('catch2', e.message))\n  .then(() => console.log('done'));\n",
+    code: "Promise.resolve('a')\n  .then(v => { console.log(v); throw new Error('x'); })\n  .then(v => console.log(v))\n  .catch(e => { console.log(e.message); return 'b'; })\n  .then(v => { console.log(v); throw new Error('y'); })\n  .catch(e => console.log(e.message));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"then1\"",
-          "\"a\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"catch1\"",
-          "\"x\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"then3\"",
-          "\"b\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"catch2\"",
-          "\"y\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"done\""
-        ]
-      }
+      { type: "log", args: ["\"a\""] },
+      { type: "log", args: ["\"x\""] },
+      { type: "log", args: ["\"b\""] },
+      { type: "log", args: ["\"y\""] },
     ],
-    answer: "then1 a, catch1 x, then3 b, catch2 y, done",
-    theory: "Отклонённый промис ищет вниз по цепочке первый `catch` и молча проскакивает все `then` на пути — поэтому `then2` не вызывается вообще. `catch` возвращает `b` и тем самым снова делает цепочку выполненной, так что следующий `then` получает нормальное значение. Новый `throw` внутри `then3` снова отклоняет цепочку, и его ловит уже второй `catch`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "a, x, b, y",
+    theory: "Отклонённый промис ищет вниз по цепочке первый `catch` и молча проскакивает все `then` на пути — поэтому второй `then` не вызывается вообще. `catch` возвращает `b` и тем самым снова делает цепочку выполненной, так что следующий `then` получает нормальное значение. Новый `throw` внутри него снова отклоняет цепочку, и его ловит уже второй `catch`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "5.14",
@@ -690,44 +495,16 @@ export const CARDS = [
       "timers"
     ],
     strict: false,
-    code: "Promise.resolve('a')\n  .then(v => {\n    console.log('t1', v);\n    return new Promise(res => setTimeout(() => { console.log('inner'); res('b'); }, 10));\n  })\n  .then(v => console.log('t2', v));\nqueueMicrotask(() => console.log('m'));\nconsole.log('sync');\n",
+    code: "Promise.resolve('a')\n  .then(v => new Promise(res => setTimeout(() => { console.log('inner'); res('b'); }, 10)))\n  .then(v => console.log(v));\nqueueMicrotask(() => console.log('m'));\nconsole.log('sync');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"sync\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"t1\"",
-          "\"a\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"m\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"inner\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"t2\"",
-          "\"b\""
-        ]
-      }
+      { type: "log", args: ["\"sync\""] },
+      { type: "log", args: ["\"m\""] },
+      { type: "log", args: ["\"inner\""] },
+      { type: "log", args: ["\"b\""] },
     ],
-    answer: "sync, t1 a, m, inner, t2 b",
-    theory: "Если колбэк `then` вернул промис, следующий `then` ждёт не значения, а его выполнения: движок подписывает цепочку на возвращённый промис. Здесь это заметно по паузе — за время ожидания таймера успевает отработать микротаск `m`. В `t2` приходит уже `b`, то есть значение, которым резолвнулся внутренний промис.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "sync, m, inner, b",
+    theory: "Если колбэк `then` вернул промис, следующий `then` ждёт не значения, а его выполнения: движок подписывает цепочку на возвращённый промис. Здесь это заметно по паузе — за время ожидания таймера успевает отработать микротаск `m`. В последний `then` приходит уже `b`, то есть значение, которым резолвнулся внутренний промис.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   }
 ];

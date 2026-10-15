@@ -123,51 +123,51 @@ export const CARDS = [
     kind: "predict",
     level: 1,
     order: 5,
-    title: "typeof, плюс и нестрогое равенство",
-    tags: [
-      "types",
-      "coercion"
-    ],
+    title: "typeof для null, массива и NaN",
+    tags: ["types"],
     strict: false,
-    code: "console.log(typeof null, typeof [], typeof NaN);\nconsole.log([] + [], [] + {}, '5' - 2, '5' + 2);\nconsole.log(null == 0, null >= 0, NaN === NaN, 0.1 + 0.2 === 0.3);\n",
-    expected: [
-      {
-        type: "log",
-        args: [
-          "\"object\"",
-          "\"object\"",
-          "\"number\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"\"",
-          "\"[object Object]\"",
-          "3",
-          "\"52\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false",
-          "true",
-          "false",
-          "false"
-        ]
-      }
-    ],
-    answer: "object object number · пустая строка, [object Object], 3, '52' · false true false false",
-    theory: "`typeof null` исторически `\"object\"`, массив тоже `\"object\"`, `NaN` — число. `[] + []` склеивает пустые строки. `[] + {}` даёт `\"[object Object]\"`. Минус приводит к числу (`3`), плюс со строкой склеивает (`\"52\"`). `null == 0` ложь, но `null >= 0` истина: операторы сравнения приводят `null` к `0`. `NaN` не равен сам себе. `0.1 + 0.2` не равно `0.3` из-за двоичной дроби.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    code: "console.log(typeof null, typeof [], typeof NaN);\n",
+    expected: [{ type: "log", args: ["\"object\"", "\"object\"", "\"number\""] }],
+    answer: "object object number",
+    theory: "`typeof null` исторически `\"object\"` — это ошибка первой версии языка, которую оставили ради совместимости. Массив тоже `\"object\"`: отличить его помогает `Array.isArray`. `NaN` — значение числового типа, поэтому `\"number\"`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
+  },
+  {
+    id: "1.28",
+    kind: "predict",
+    level: 1,
+    order: 6,
+    title: "Плюс и минус со строками и массивами",
+    tags: ["types", "coercion"],
+    strict: false,
+    code: "console.log([] + [], [] + {}, '5' - 2, '5' + 2);\n",
+    expected: [{ type: "log", args: ["\"\"", "\"[object Object]\"", "3", "\"52\""] }],
+    answer: "пустая строка, [object Object], 3, '52'",
+    theory: "`[] + []` превращает оба массива в пустые строки и склеивает их. `[] + {}` даёт `\"[object Object]\"`. Минус всегда приводит к числу (`3`), а плюс со строкой склеивает (`\"52\"`).",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 1,
+  },
+  {
+    id: "1.29",
+    kind: "predict",
+    level: 1,
+    order: 7,
+    title: "null в сравнениях, NaN и 0.1 + 0.2",
+    tags: ["types", "coercion", "equality"],
+    strict: false,
+    code: "console.log(null == 0, null >= 0, NaN === NaN, 0.1 + 0.2 === 0.3);\n",
+    expected: [{ type: "log", args: ["false", "true", "false", "false"] }],
+    answer: "false true false false",
+    theory: "`null == 0` ложь: при `==` `null` равен только `undefined`. Но `null >= 0` истина: операторы сравнения приводят `null` к `0`. `NaN` не равен ничему, даже себе. `0.1 + 0.2` не равно `0.3` из-за двоичной дроби.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 1,
   },
   {
     id: "1.6",
     kind: "predict",
     level: 1,
-    order: 6,
+    order: 8,
     title: "typeof необъявленного и typeof в TDZ",
     tags: [
       "tdz",
@@ -197,7 +197,7 @@ export const CARDS = [
     id: "1.7",
     kind: "predict",
     level: 1,
-    order: 7,
+    order: 9,
     title: "var не видит блок, let видит",
     tags: [
       "scope"
@@ -227,7 +227,7 @@ export const CARDS = [
     id: "1.8",
     kind: "predict",
     level: 1,
-    order: 8,
+    order: 10,
     title: "const и стрелка не поднимаются",
     tags: [
       "tdz",
@@ -251,7 +251,7 @@ export const CARDS = [
     id: "1.9",
     kind: "predict",
     level: 1,
-    order: 9,
+    order: 11,
     title: "function и var с одним именем",
     tags: [
       "hoisting"
@@ -275,7 +275,7 @@ export const CARDS = [
     id: "1.10",
     kind: "predict",
     level: 1,
-    order: 10,
+    order: 12,
     title: "Присваивание без объявления",
     tags: [
       "scope",
@@ -300,7 +300,7 @@ export const CARDS = [
     id: "1.11",
     kind: "predict",
     level: 1,
-    order: 11,
+    order: 13,
     title: "Переменная цикла снаружи for",
     tags: [
       "scope"
@@ -329,7 +329,7 @@ export const CARDS = [
     id: "1.12",
     kind: "predict",
     level: 1,
-    order: 12,
+    order: 14,
     title: "var из невыполненного if",
     tags: [
       "hoisting"
@@ -353,7 +353,7 @@ export const CARDS = [
     id: "1.13",
     kind: "predict",
     level: 1,
-    order: 13,
+    order: 15,
     title: "Лексическая область, не место вызова",
     tags: [
       "scope",
@@ -378,7 +378,7 @@ export const CARDS = [
     id: "1.14",
     kind: "predict",
     level: 1,
-    order: 14,
+    order: 16,
     title: "const запрещает другое присваивание",
     tags: [
       "scope"
@@ -407,7 +407,7 @@ export const CARDS = [
     id: "1.15",
     kind: "predict",
     level: 1,
-    order: 15,
+    order: 17,
     title: "typeof от typeof и разные типы",
     tags: [
       "types"
@@ -439,7 +439,7 @@ export const CARDS = [
     id: "1.16",
     kind: "predict",
     level: 1,
-    order: 16,
+    order: 18,
     title: "true, null и undefined в плюсе",
     tags: [
       "coercion"
@@ -466,69 +466,46 @@ export const CARDS = [
     id: "1.17",
     kind: "predict",
     level: 1,
-    order: 17,
+    order: 19,
     title: "Строки в арифметике и унарный плюс",
     tags: [
       "coercion"
     ],
     strict: false,
-    code: "console.log('3' * '4', '10' / 2, '5' - - '2', +'', +' 7 ', +'7px');\n",
+    code: "console.log('3' * '4', '5' - - '2', +' 7 ', +'7px');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "12",
-          "5",
-          "7",
-          "0",
-          "7",
-          "NaN"
-        ]
-      }
+      { type: "log", args: ["12", "7", "7", "NaN"] },
     ],
-    answer: "12 5 7 0 7 NaN",
-    theory: "`*` и `/` всегда numeric: `'3' * '4'` это `12`, `'10' / 2` это `5`. `'5' - - '2'` читается как `5 - (-2)`. Унарный плюс приводит к числу: пустая строка → `0`, строка с пробелами → `7`, `'7px'` → `NaN`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "12 7 7 NaN",
+    theory: "`*` всегда приводит к числу: `'3' * '4'` это `12`. `'5' - - '2'` читается как `5 - (-2)`. Унарный плюс тоже приводит к числу: пробелы по краям отбрасываются, поэтому `' 7 '` → `7`, а `'7px'` целиком не число → `NaN`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "1.18",
     kind: "predict",
     level: 1,
-    order: 18,
+    order: 20,
     title: "== не транзитивно",
     tags: [
       "coercion"
     ],
     strict: false,
-    code: "console.log(0 == '', 0 == '0', '' == '0');\nconsole.log(null == undefined, null === undefined);\n",
+    code: "console.log(0 == '', 0 == '0', '' == '0');\nconsole.log(null == undefined);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "true",
-          "true",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "true",
-          "false"
-        ]
-      }
+      { type: "log", args: ["true", "true", "false"] },
+      { type: "log", args: ["true"] },
     ],
-    answer: "true true false; true false",
-    theory: "`==` приводит типы. `0 == ''` и `0 == '0'` истина, потому что строка становится числом. `'' == '0'` сравнивает две строки без числа — ложь. Поэтому `==` не транзитивно. `null == undefined` истина только друг для друга, `===` эту пару не равняет.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "true true false; true",
+    theory: "`==` приводит типы. `0 == ''` и `0 == '0'` истина, потому что строка становится числом. `'' == '0'` сравнивает две строки без числа — ложь. Поэтому `==` не транзитивно. `null == undefined` истина: при `==` они равны только друг другу, а `===` эту пару уже не равняет.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "1.19",
     kind: "predict",
     level: 1,
-    order: 19,
+    order: 21,
     title: "Массив в == и в плюсе",
     tags: [
       "coercion"
@@ -560,36 +537,27 @@ export const CARDS = [
     id: "1.20",
     kind: "predict",
     level: 1,
-    order: 20,
+    order: 22,
     title: "Что truthy на самом деле",
     tags: [
       "types",
       "coercion"
     ],
     strict: false,
-    code: "console.log(Boolean([]), Boolean({}), Boolean(''), Boolean('0'), Boolean(NaN));\n",
+    code: "console.log(Boolean([]), Boolean(''), Boolean('0'), Boolean(NaN));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "true",
-          "true",
-          "false",
-          "true",
-          "false"
-        ]
-      }
+      { type: "log", args: ["true", "false", "true", "false"] },
     ],
-    answer: "true true false true false",
+    answer: "true false true false",
     theory: "К boolean приводят по короткому списку falsy, а не по «пустоте». Любой объект и любой массив truthy, даже пустые. Пустая строка и `NaN` falsy. Строка `\"0\"` не пустая, она truthy.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "1.21",
     kind: "predict",
     level: 1,
-    order: 21,
+    order: 23,
     title: "NaN, Number.isNaN и isNaN",
     tags: [
       "types"
@@ -615,7 +583,7 @@ export const CARDS = [
     id: "1.22",
     kind: "predict",
     level: 1,
-    order: 22,
+    order: 24,
     title: "let внутри case: со скобками и без",
     tags: ["tdz", "scope"],
     strict: false,
@@ -635,26 +603,41 @@ export const CARDS = [
     id: "1.23",
     kind: "predict",
     level: 1,
-    order: 23,
-    title: "delete: переменная против свойства",
+    order: 25,
+    title: "delete по имени переменной",
     tags: ["scope", "types"],
     strict: false,
-    code: "var x = 1;\nlet y = 2;\nconst obj = { a: 1, b: 2 };\nconsole.log(delete x, delete y, x, y);\nconsole.log(delete obj.a, obj.a, Object.keys(obj).length);\nconsole.log(delete obj.nothing, 'a' in obj, 'b' in obj);\n",
+    code: "var x = 1;\nlet y = 2;\nconsole.log(delete x, delete y, x);\n",
     expected: [
-      { type: "log", args: ["false", "false", "1", "2"] },
-      { type: "log", args: ["true", "undefined", "1"] },
-      { type: "log", args: ["true", "false", "true"] },
+      { type: "log", args: ["false", "false", "1"] },
     ],
-    answer: "false false 1 2; true undefined 1; true false true",
-    theory: "`delete` умеет удалять только свойства объектов: для имени переменной — неважно, `var` это или `let` — он возвращает `false` и ничего не трогает. У свойства всё иначе: `obj.a` действительно исчезает, чтение даёт `undefined`, а `in` возвращает `false`. Удаление несуществующего свойства при этом считается успешным и возвращает `true`. В strict mode `delete` по имени переменной — уже `SyntaxError`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
+    answer: "false false 1",
+    theory: "`delete` умеет удалять только свойства объектов. Для имени переменной — неважно, `var` это или `let` — он возвращает `false` и ничего не трогает, поэтому `x` по-прежнему `1`. В strict mode `delete` по имени переменной — уже `SyntaxError`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
+  },
+  {
+    id: "1.30",
+    kind: "predict",
+    level: 1,
+    order: 26,
+    title: "delete для свойства объекта",
+    tags: ["types", "object"],
+    strict: false,
+    code: "const obj = { a: 1, b: 2 };\nconsole.log(delete obj.a, obj.a, delete obj.nothing, 'a' in obj);\n",
+    expected: [
+      { type: "log", args: ["true", "undefined", "true", "false"] },
+    ],
+    answer: "true undefined true false",
+    theory: "У свойства `delete` работает по-настоящему: `obj.a` исчезает, чтение даёт `undefined`, а `in` возвращает `false`. Удаление несуществующего свойства тоже считается успешным и возвращает `true`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
     rev: 1,
   },
   {
     id: "1.24",
     kind: "predict",
     level: 1,
-    order: 24,
+    order: 27,
     title: "Присваивание параметру: число и объект",
     tags: ["scope", "types"],
     strict: false,
@@ -672,56 +655,87 @@ export const CARDS = [
     id: "1.25",
     kind: "predict",
     level: 1,
-    order: 25,
+    order: 28,
     title: "Дефолты в деструктуризации: undefined и null",
     tags: ["types", "coercion"],
     strict: false,
-    code: "const { a = 1, b = 2, c = 3 } = { a: null, b: undefined, c: 0 };\nconsole.log(a, b, c);\n\nconst [x = 10, y = 20] = [undefined, null];\nconsole.log(x, y);\n\nfunction f({ n = 5 } = {}) {\n  return n;\n}\nconsole.log(f({ n: null }), f({}), f());\n",
+    code: "const { a = 1, b = 2 } = { a: null, b: undefined };\nconsole.log(a, b);\n\nconst [x = 10, y = 20] = [undefined, null];\nconsole.log(x, y);\n",
     expected: [
-      { type: "log", args: ["null", "2", "0"] },
+      { type: "log", args: ["null", "2"] },
       { type: "log", args: ["10", "null"] },
-      { type: "log", args: ["null", "5", "5"] },
     ],
-    answer: "null 2 0; 10 null; null 5 5",
-    theory: "Значение по умолчанию срабатывает ровно на `undefined` — это тот же механизм, что у дефолтов параметров функции. Поэтому `b` из `undefined` становится `2`, а `a: null` и `c: 0` остаются как есть, хотя оба falsy. В массиве `undefined` в первой позиции даёт `10`, а `null` во второй так и остаётся `null`. Дефолт у самого параметра (`= {}`) нужен, чтобы вызов совсем без аргумента не падал.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
+    answer: "null 2; 10 null",
+    theory: "Значение по умолчанию срабатывает ровно на `undefined`. Поэтому `b` из `undefined` становится `2`, а `a: null` остаётся `null`, хотя это falsy. В массиве так же: `undefined` в первой позиции даёт `10`, а `null` во второй так и остаётся `null`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
+  },
+  {
+    id: "1.31",
+    kind: "predict",
+    level: 1,
+    order: 29,
+    title: "Дефолт параметра и дефолт внутри него",
+    tags: ["types", "coercion"],
+    strict: false,
+    code: "function f({ n = 5 } = {}) {\n  return n;\n}\nconsole.log(f({ n: null }), f({ n: 0 }), f({}), f());\n",
+    expected: [
+      { type: "log", args: ["null", "0", "5", "5"] },
+    ],
+    answer: "null 0 5 5",
+    theory: "Дефолт поля `n = 5` срабатывает только на `undefined`: `null` и `0` проходят как есть. `f({})` даёт `5`, потому что поля нет. Дефолт у самого параметра (`= {}`) нужен, чтобы вызов совсем без аргумента не падал: без него `f()` бросил бы `TypeError` при деструктуризации `undefined`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
     rev: 1,
   },
   {
     id: "1.26",
     kind: "predict",
     level: 1,
-    order: 26,
+    order: 30,
     title: "Object.is смотрит иначе, чем ===",
     tags: ["equality", "types"],
     strict: false,
-    code: "const o = {};\nconsole.log(NaN === NaN, Object.is(NaN, NaN));\nconsole.log(0 === -0, Object.is(0, -0));\nconsole.log(Object.is('1', 1), Object.is(o, o), Object.is({}, {}));\n",
+    code: "console.log(NaN === NaN, Object.is(NaN, NaN));\nconsole.log(0 === -0, Object.is(0, -0));\n",
     expected: [
       { type: "log", args: ["false", "true"] },
       { type: "log", args: ["true", "false"] },
-      { type: "log", args: ["false", "true", "false"] },
     ],
-    answer: "false true; true false; false true false",
+    answer: "false true; true false",
     theory: "`Object.is` — это почти `===`, расходится он ровно в двух случаях. `NaN` он считает равным самому себе, а `0` и `-0` различает, тогда как `===` их не различает. Всё остальное совпадает: разные типы не равны, один и тот же объект равен себе, два разных объекта — нет. Типы `Object.is`, как и `===`, не приводит.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1,
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "1.27",
     kind: "predict",
     level: 1,
-    order: 27,
+    order: 31,
     title: "0 и пустая строка: ?? против ||",
     tags: ["coercion", "types"],
     strict: false,
-    code: "const a = 0 || 'fallback';\nconst b = 0 ?? 'fallback';\nconst c = '' ?? 'fallback';\nconsole.log(a, b, c);\n\nlet hits = 0;\nfunction side() {\n  hits += 1;\n  return 'called';\n}\nconst r = false && side();\nconst s = true || side();\nconst t = undefined ?? side();\nconsole.log(r, s, t, hits);\n",
+    code: "const a = 0 || 'fallback';\nconst b = 0 ?? 'fallback';\nconst c = '' ?? 'fallback';\nconsole.log(a, b, c);\n",
     expected: [
       { type: "log", args: ["\"fallback\"", "0", "\"\""] },
+    ],
+    answer: "'fallback' 0 ''",
+    theory: "`||` берёт правый операнд, если левый falsy: `0` для него пусто, поэтому в `a` попадает `'fallback'`. `??` реагирует только на `null` и `undefined`, так что `0` и `''` проходят насквозь.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
+  },
+  {
+    id: "1.32",
+    kind: "predict",
+    level: 1,
+    order: 32,
+    title: "Короткое замыкание: &&, || и ??",
+    tags: ["coercion", "types"],
+    strict: false,
+    code: "let hits = 0;\nfunction side() {\n  hits += 1;\n  return 'called';\n}\nconst r = false && side();\nconst s = true || side();\nconst t = undefined ?? side();\nconsole.log(r, s, t, hits);\n",
+    expected: [
       { type: "log", args: ["false", "true", "\"called\"", "1"] },
     ],
-    answer: "'fallback' 0 ''; false true 'called' 1",
-    theory: "`||` берёт правый операнд, если левый falsy: `0` и `''` для него пусто, поэтому в `a` попадает `'fallback'`. `??` реагирует только на `null` и `undefined`, так что `0` и `''` проходят насквозь. Заодно видно короткое замыкание: у `false && ...` и `true || ...` правая часть не вычисляется вовсе, поэтому `side` вызывается один раз — только из `??`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
+    answer: "false true 'called' 1",
+    theory: "У `false && ...` и `true || ...` результат известен по левой части, поэтому правая не вычисляется вовсе и `side` не вызывается. `??` видит слева `undefined` и только тогда вычисляет правую часть — отсюда `'called'` и `hits`, равный `1`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
     rev: 1,
   },
 ];

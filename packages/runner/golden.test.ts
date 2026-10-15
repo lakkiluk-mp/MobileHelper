@@ -12,7 +12,7 @@ import { runInNode } from "./src/node-host.ts";
  * вместе с контентом — тест специально падает, когда состав изменился.
  */
 const LEVEL_SIZES: Record<number, number> = {
-  1: 27,
+  1: 32,
   2: 14,
   3: 17,
   4: 14,

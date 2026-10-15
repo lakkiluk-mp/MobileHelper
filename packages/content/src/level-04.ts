@@ -97,34 +97,15 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "function F() {}\nconst f = new F();\nconsole.log(f.__proto__ === F.prototype, typeof F.__proto__, F.__proto__ === Function.prototype);\nconst Child = F.bind(null);\nconsole.log(Child.prototype === F.prototype, typeof Child.prototype === 'undefined');\nconsole.log(F.__proto__ === Function.prototype);\n",
+    code: "function F() {}\nconst f = new F();\nconsole.log(f.__proto__ === F.prototype, F.__proto__ === Function.prototype);\nconst Child = F.bind(null);\nconsole.log(Child.prototype === F.prototype, typeof Child.prototype === 'undefined');\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "true",
-          "\"function\"",
-          "true"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false",
-          "true"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "true"
-        ]
-      }
+      { type: "log", args: ["true", "true"] },
+      { type: "log", args: ["false", "true"] },
     ],
-    answer: "true, function, true; false, true; true",
+    answer: "true true; false true",
     theory: "`prototype` — обычное свойство функции-конструктора: объект, который получат будущие экземпляры. `__proto__` — геттер/сеттер из `Object.prototype`: он читает и пишет `[[Prototype]]` самого объекта. Для экземпляра это `F.prototype`, для самой функции — `Function.prototype`, потому что функция тоже объект и её цепочка ведёт к функциям. У стрелочных функций и у `bind`-обёрток собственного `prototype` нет вовсе.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.5",
@@ -137,35 +118,15 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "const o = Object.create(null);\no.x = 1;\nconsole.log(Object.getPrototypeOf(o), JSON.stringify(o));\nconsole.log(String(o.toString), String(o.hasOwnProperty));\nconsole.log('toString' in o, 'x' in o, Object.keys(o));\n",
+    code: "const o = Object.create(null);\no.x = 1;\nconsole.log(Object.getPrototypeOf(o), String(o.toString));\nconsole.log('toString' in o, 'x' in o);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "null",
-          "\"{\\\"x\\\":1}\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"undefined\"",
-          "\"undefined\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false",
-          "true",
-          "[\"x\"]"
-        ]
-      }
+      { type: "log", args: ["null", "\"undefined\""] },
+      { type: "log", args: ["false", "true"] },
     ],
-    answer: "null, {x:1}; undefined undefined; false true ['x']",
-    theory: "`Object.create(null)` создаёт объект с `[[Prototype]] = null`: цепочка обрывается сразу, и весь `Object.prototype` с его `toString`, `hasOwnProperty`, `valueOf` недоступен. Поэтому `o.toString` — `undefined`, а не функция, хотя `JSON.stringify` работает: он не зовёт методы объекта. Оператор `in` тоже перестаёт находить что-либо унаследованное, а `Object.keys` видит только собственный `x`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "null undefined; false true",
+    theory: "`Object.create(null)` создаёт объект с `[[Prototype]] = null`: цепочка обрывается сразу, и весь `Object.prototype` с его `toString`, `hasOwnProperty`, `valueOf` недоступен. Поэтому `o.toString` — `undefined`, а не функция. Оператор `in` тоже перестаёт находить что-либо унаследованное и видит только собственный `x`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.6",
@@ -178,35 +139,16 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "function User() {}\nUser.prototype.role = 'guest';\nconst u = new User();\nconsole.log(u.role, u.hasOwnProperty('role'));\nu.role = 'admin';\nconsole.log(u.role, u.hasOwnProperty('role'), User.prototype.role);\ndelete u.role;\nconsole.log(u.role, u.hasOwnProperty('role'));\n",
+    code: "function User() {}\nUser.prototype.role = 'guest';\nconst u = new User();\nconsole.log(u.role);\nu.role = 'admin';\nconsole.log(u.role, User.prototype.role);\ndelete u.role;\nconsole.log(u.role);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"guest\"",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"admin\"",
-          "true",
-          "\"guest\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"guest\"",
-          "false"
-        ]
-      }
+      { type: "log", args: ["\"guest\""] },
+      { type: "log", args: ["\"admin\"", "\"guest\""] },
+      { type: "log", args: ["\"guest\""] },
     ],
-    answer: "guest false; admin true guest; guest",
-    theory: "Чтение `u.role` поднимается по цепочке и находит `role` в `User.prototype`, а `hasOwnProperty` показывает, что собственного свойства у `u` нет. Присваивание `u.role = 'admin'` не трогает прототип: движок создаёт новое собственное свойство на самом `u`, которое затеняет унаследованное. Прототип по-прежнему хранит `'guest'`, поэтому `delete u.role` возвращает прежнюю картину.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "guest; admin guest; guest",
+    theory: "Чтение `u.role` поднимается по цепочке и находит `role` в `User.prototype`. Присваивание `u.role = 'admin'` не трогает прототип: движок создаёт новое собственное свойство на самом `u`, которое затеняет унаследованное. Прототип по-прежнему хранит `'guest'`, поэтому после `delete u.role` снова виден унаследованный `'guest'`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.7",
@@ -283,33 +225,16 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "class Counter {\n  static count = 0;\n  constructor() { Counter.count += 1; }\n  static describe() { return 'count=' + this.count; }\n}\nnew Counter();\nnew Counter();\nconsole.log(Counter.describe());\nconsole.log(Object.hasOwn(Counter, 'describe'), 'describe' in Counter, Object.hasOwn(Counter.prototype, 'describe'));\nconsole.log('count' in new Counter());\n",
+    code: "class Counter {\n  static count = 0;\n  constructor() { Counter.count += 1; }\n  static describe() { return 'count=' + this.count; }\n}\nnew Counter();\nnew Counter();\nconsole.log(Counter.describe());\nconsole.log(Object.hasOwn(Counter, 'describe'), Object.hasOwn(Counter.prototype, 'describe'));\nconsole.log('count' in new Counter());\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"count=2\""
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "true",
-          "true",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false"
-        ]
-      }
+      { type: "log", args: ["\"count=2\""] },
+      { type: "log", args: ["true", "false"] },
+      { type: "log", args: ["false"] },
     ],
-    answer: "count=2; true true false; false",
+    answer: "count=2; true false; false",
     theory: "`static` кладёт свойство на саму функцию-конструктор, а не на её `prototype`: поэтому `describe` есть у `Counter` и нет у экземпляра. Внутри статического метода `this` — это класс, так что `this.count` читает статическое же поле `count`. Экземпляр о статике не знает вовсе: `'count' in new Counter()` — `false`.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.10",
@@ -323,29 +248,15 @@ export const CARDS = [
       "prototype"
     ],
     strict: false,
-    code: "class Circle {\n  constructor(r) { this.r = r; }\n  get area() { return this.r * this.r; }\n}\nconst c = new Circle(3);\nconsole.log(c.area, Object.keys(c), Object.hasOwn(c, 'area'));\nconst lit = { r: 3, get area() { return this.r * this.r; } };\nconsole.log(lit.area, Object.keys(lit), Object.hasOwn(lit, 'area'));\n",
+    code: "class Circle {\n  constructor(r) { this.r = r; }\n  get area() { return this.r * this.r; }\n}\nconst c = new Circle(3);\nconsole.log(Object.keys(c), Object.hasOwn(c, 'area'));\nconst lit = { r: 3, get area() { return this.r * this.r; } };\nconsole.log(Object.keys(lit), Object.hasOwn(lit, 'area'));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "9",
-          "[\"r\"]",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "9",
-          "[\"r\", \"area\"]",
-          "true"
-        ]
-      }
+      { type: "log", args: ["[\"r\"]", "false"] },
+      { type: "log", args: ["[\"r\", \"area\"]", "true"] },
     ],
-    answer: "9 ['r'] false; 9 ['r', 'area'] true",
+    answer: "['r'] false; ['r', 'area'] true",
     theory: "В классе `get area` попадает в `Circle.prototype` как неперечислимое свойство-аксессор, поэтому у экземпляра собственных ключей только `r`, а `Object.hasOwn` для `area` — `false`. В литерале объекта геттер задаётся прямо на этом объекте, попадает в его собственные свойства и, что важнее, оказывается перечислимым: `Object.keys` его показывает.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.11",
@@ -359,33 +270,15 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "function Base() { this.own = 1; }\nBase.prototype.base = 'base';\nfunction Mid() { Base.call(this); }\nMid.prototype = Object.create(Base.prototype);\nMid.prototype.mid = 'mid';\nconst m = new Mid();\nconsole.log(m.base, m.mid, m.own);\nconsole.log(Object.keys(m));\nconst collected = [];\nfor (const k in m) collected.push(k);\nconsole.log(collected);\n",
+    code: "function Base() { this.own = 1; }\nBase.prototype.base = 'base';\nfunction Mid() { Base.call(this); }\nMid.prototype = Object.create(Base.prototype);\nMid.prototype.mid = 'mid';\nconst m = new Mid();\nconsole.log(Object.keys(m));\nconst collected = [];\nfor (const k in m) collected.push(k);\nconsole.log(collected);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"base\"",
-          "\"mid\"",
-          "1"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "[\"own\"]"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "[\"own\", \"mid\", \"base\"]"
-        ]
-      }
+      { type: "log", args: ["[\"own\"]"] },
+      { type: "log", args: ["[\"own\", \"mid\", \"base\"]"] },
     ],
-    answer: "base mid 1; ['own']; ['own', 'mid', 'base']",
+    answer: "['own']; ['own', 'mid', 'base']",
     theory: "`Object.keys` возвращает только собственные перечислимые ключи, поэтому видит лишь `own`, созданный в конструкторе. `for...in` идёт по всей цепочке прототипов и добавляет перечислимые чужие ключи: `mid` из `Mid.prototype` и `base` из `Base.prototype`. Порядок обхода — сначала собственные, потом по цепочке вверх.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.12",
@@ -398,39 +291,17 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "const arr = [1, 2, 3];\nArray.prototype.last = function () { return this[this.length - 1]; };\nconsole.log(arr.last(), [9, 8].last(), [].last());\nconst seen = [];\nfor (const k in arr) seen.push(k);\nconsole.log(seen);\nconsole.log(Object.keys(arr));\ndelete Array.prototype.last;\nconsole.log(String(arr.last));\n",
+    code: "const arr = [1, 2, 3];\nArray.prototype.last = function () { return this[this.length - 1]; };\nconsole.log(arr.last());\nconst seen = [];\nfor (const k in arr) seen.push(k);\nconsole.log(seen);\nconsole.log(Object.keys(arr));\ndelete Array.prototype.last;\nconsole.log(String(arr.last));\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "3",
-          "8",
-          "undefined"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "[\"0\", \"1\", \"2\", \"last\"]"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "[\"0\", \"1\", \"2\"]"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"undefined\""
-        ]
-      }
+      { type: "log", args: ["3"] },
+      { type: "log", args: ["[\"0\", \"1\", \"2\", \"last\"]"] },
+      { type: "log", args: ["[\"0\", \"1\", \"2\"]"] },
+      { type: "log", args: ["\"undefined\""] },
     ],
-    answer: "3 8 undefined; ['0','1','2','last']; ['0','1','2']; undefined",
+    answer: "3; ['0','1','2','last']; ['0','1','2']; undefined",
     theory: "Присваивание в `Array.prototype` попадает в общий объект-прототип массивов, поэтому метод тут же видят все массивы, а не только `arr`. Обычное присваивание делает свойство перечислимым, в отличие от встроенных методов, и оно всплывает в `for...in`, хотя `Object.keys` его не покажет — это собственный ключ прототипа, а не массива. Удаление из прототипа убирает метод сразу у всех массивов.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.13",
@@ -443,36 +314,15 @@ export const CARDS = [
       "object"
     ],
     strict: false,
-    code: "class Temperature {\n  constructor() { this.celsius = 20; }\n  static [Symbol.hasInstance](v) { return typeof v === 'number'; }\n}\nconsole.log(42 instanceof Temperature, 'text' instanceof Temperature);\nconsole.log(42 instanceof Number, 'text' instanceof String, new Number(42) instanceof Number);\nconsole.log(42 instanceof Object, 'text' instanceof Object, null instanceof Object);\n",
+    code: "class Temperature {\n  constructor() { this.celsius = 20; }\n  static [Symbol.hasInstance](v) { return typeof v === 'number'; }\n}\nconsole.log(42 instanceof Temperature, 'text' instanceof Temperature);\nconsole.log(42 instanceof Number, new Number(42) instanceof Number);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "true",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false",
-          "false",
-          "true"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "false",
-          "false",
-          "false"
-        ]
-      }
+      { type: "log", args: ["true", "false"] },
+      { type: "log", args: ["false", "true"] },
     ],
-    answer: "true false; false false false; false false false",
-    theory: "По умолчанию `instanceof` идёт по цепочке прототипов, а примитив объектом не является, поэтому `42 instanceof Number` — `false` (обёрнутое `new Number(42)` дало бы `true`). Свой `Symbol.hasInstance` переопределяет проверку целиком: метод получает левый операнд как есть, и класс сам решает, что считать своим экземпляром — здесь любое число. Для строки и `null` такого метода никто не объявлял, и они снова упираются в обычное правило.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "true false; false true",
+    theory: "По умолчанию `instanceof` идёт по цепочке прототипов, а примитив объектом не является, поэтому `42 instanceof Number` — `false`, а обёрнутое `new Number(42)` даёт `true`. Свой `Symbol.hasInstance` переопределяет проверку целиком: метод получает левый операнд как есть, и класс сам решает, что считать своим экземпляром — здесь любое число, поэтому `42` проходит, а `'text'` нет.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   },
   {
     id: "4.14",
@@ -485,36 +335,15 @@ export const CARDS = [
       "prototype"
     ],
     strict: false,
-    code: "function Top() {}\nTop.prototype.kind = 'top';\nfunction Mid() {}\nMid.prototype = Object.create(Top.prototype);\nMid.prototype.kind = 'mid';\nfunction Leaf() {}\nLeaf.prototype = Object.create(Mid.prototype);\nconst l = new Leaf();\nconsole.log(l.kind, 'kind' in l, Object.hasOwn(l, 'kind'));\ndelete Mid.prototype.kind;\nconsole.log(l.kind, 'kind' in l, Object.hasOwn(l, 'kind'));\ndelete Top.prototype.kind;\nconsole.log(l.kind, 'kind' in l, Object.hasOwn(l, 'kind'));\n",
+    code: "function Top() {}\nTop.prototype.kind = 'top';\nfunction Mid() {}\nMid.prototype = Object.create(Top.prototype);\nMid.prototype.kind = 'mid';\nfunction Leaf() {}\nLeaf.prototype = Object.create(Mid.prototype);\nconst l = new Leaf();\nconsole.log(l.kind);\ndelete Mid.prototype.kind;\nconsole.log(l.kind);\ndelete Top.prototype.kind;\nconsole.log(l.kind, 'kind' in l);\n",
     expected: [
-      {
-        type: "log",
-        args: [
-          "\"mid\"",
-          "true",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "\"top\"",
-          "true",
-          "false"
-        ]
-      },
-      {
-        type: "log",
-        args: [
-          "undefined",
-          "false",
-          "false"
-        ]
-      }
+      { type: "log", args: ["\"mid\""] },
+      { type: "log", args: ["\"top\""] },
+      { type: "log", args: ["undefined", "false"] },
     ],
-    answer: "mid true false; top true false; undefined false false",
-    theory: "`[[Prototype]]` экземпляра — `Leaf.prototype`, выше `Mid.prototype`, ещё выше `Top.prototype`: поиск идёт снизу вверх и останавливается на первом совпадении, поэтому `kind` находится на среднем звене и до `Top` не доходит. После `delete` среднее звено теряет ключ, и поиск продолжается выше — теперь виден `top`. Когда свойство удалено отовсюду, `in` тоже даёт `false`, хотя `Object.hasOwn` и раньше был `false`: у экземпляра ключа нет ни в один момент.",
-    updatedAt: "2026-10-11T09:00:00.000Z",
-    rev: 1
+    answer: "mid; top; undefined false",
+    theory: "`[[Prototype]]` экземпляра — `Leaf.prototype`, выше `Mid.prototype`, ещё выше `Top.prototype`: поиск идёт снизу вверх и останавливается на первом совпадении, поэтому `kind` находится на среднем звене и до `Top` не доходит. После `delete` среднее звено теряет ключ, и поиск продолжается выше — теперь виден `top`. Когда свойство удалено отовсюду, чтение даёт `undefined`, а `in` — `false`.",
+    updatedAt: "2026-10-15T09:00:00.000Z",
+    rev: 2,
   }
 ];
